@@ -48,15 +48,6 @@ MegaLOD/
 | `software/` | Development team | Omeka S application, modules, themes | Ontology sources, raw data dumps |
 | `MAP.md` | Ontology team | Metadata Application Profile spec | — |
 
-### What Never Belongs in This Repository
-
-- Secrets, credentials, API keys, private certificates (`.env`, `*.pem`, `*.key`)
-- Local config overrides (`database.ini`, `local.config.php`, `graphdb.config.php`)
-- Runtime data (`logs/`, `files/`, `uploads/`, `cache/`, `tmp/`)
-- Database dumps (`*.sql`, `*.sqlite`, `*.dump`)
-- Package manager output (`vendor/`, `node_modules/`, `composer.phar`)
-- OS/IDE noise (`.DS_Store`, `Thumbs.db`, `.vscode/`, `.idea/`)
-
 ## Key Custom Module: AddTriplestore
 
 The `AddTriplestore` module connects Omeka S to a GraphDB triplestore, enabling SPARQL queries and RDF export of excavation and artefact data.
