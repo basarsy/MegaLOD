@@ -1,0 +1,39 @@
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix dc: <http://purl.org/dc/terms/> .
+
+<https://purl.org/megalod/kos/axe-longitudinalSection> a skos:ConceptScheme, prov:Entity ;
+    skos:prefLabel "Arrowhead shape"@en;
+    skos:hasTopConcept <https://purl.org/megalod/kos/axe-longitudinalSection/convex-rectilinear,>,
+        <https://purl.org/megalod/kos/axe-longitudinalSection/biconvex>,
+        <https://purl.org/megalod/kos/axe-longitudinalSection/parallel-flanks> ;
+    dc:creator "Mariana Curado Malta(INESC TEC, Faculdade de Engenharia, Universidade do Porto, Portugal)" ;
+    dc:contributor "João Muralha (CHAM, Faculdade de Ciências Sociais e Humanas, Universidade Nova de Lisboa, Portugal)";
+    dc:date "2025-05-20"^^xsd:date ;
+    dc:title "Kos about axe morphology"@en.
+
+
+<https://purl.org/megalod/kos/axe-longitudinalSection/convex-rectilinear> a skos:Concept ;
+    skos:prefLabel "Triangular"@en ;
+    skos:prefLabel "Triangular"@pt ;
+    skos:prefLabel "Triangulaire"@fr ;
+    skos:inScheme <https://purl.org/megalod/kos/axe-longitudinalSection> ;
+    skos:topConceptOf <https://purl.org/megalod/kos/axe-longitudinalSection>.
+
+<https://purl.org/megalod/kos/axe-longitudinalSection/biconvex> a skos:Concept ;
+    skos:prefLabel "Rectangular"@en ;
+    skos:prefLabel "Retangular"@pt ;
+    skos:prefLabel "Rectangulaire"@fr ;
+    skos:inScheme <https://purl.org/megalod/kos/axe-longitudinalSection> ;
+    skos:topConceptOf <https://purl.org/megalod/kos/axe-longitudinalSection>.
+
+<https://purl.org/megalod/kos/axe-longitudinalSection/parallel-flanks> a skos:Concept ;
+    skos:prefLabel "Quadrangular"@en ;
+    skos:prefLabel "Quadrangular"@pt ;
+    skos:prefLabel "Quadrangulaire"@fr ;
+    skos:inScheme <https://purl.org/megalod/kos/axe-longitudinalSection> ;
+    skos:topConceptOf <https://purl.org/megalod/kos/axe-longitudinalSection>.

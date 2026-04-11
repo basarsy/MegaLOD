@@ -1,0 +1,202 @@
+<?php
+
+$this->headTitle('About Us');
+$this->htmlElement('body')->appendAttribute('class', 'about-us-page');
+?>
+
+<div class="about-us-container">
+    <h1>About MegaLOD Data Management Project</h1>
+    
+    <section class="about-section">
+        <h2>Project Overview</h2>
+        <p>
+            The Neolithic period (7000-1700 BCE) cultural heritage sites have traditionally been documented using basic tools like spreadsheets and local databases, accessible through various websites and apps. While these solutions make information available, they create isolated data silos that prevent data sharing and reuse. Our project addresses this limitation by developing a common data model using Linked Open Data (LOD) technology. This approach enables data interoperability, machine reasoning, and integration with existing cultural heritage resources from galleries, libraries, archives, and museums (GLAM community). By publishing data in the Semantic Web format, we create opportunities for new discoveries through interconnected datasets.
+        </p>
+        
+    </section>
+    
+    <section class="about-section">
+        <h2>Our Mission</h2>
+        <p>Our mission is to revolutionize archaeological research through an innovative, open-source platform for cataloging and sharing megalithic heritage data. We aim to:</p>
+        <br>
+        <ul>
+            <li>Provide a framework of interoperability for megalithic assets of the European Neolithic period</li>
+            <li>Develop a standardized metadata application profile (MAP) for publishing interoperable megalithic datasets</li>
+            <li>Create software applications allowing users to explore cultural heritage items in multiple dimensions</li>
+            <li>Make datasets openly available through SPARQL endpoints and APIs for maximum reusability</li>
+            <li>Develop a public website and virtual museum app to showcase megalithic sites and findings</li>
+        </ul>
+    </section>
+    
+    <section class="about-section">
+        <h2>Technical Approach</h2>
+        <p>The platform is built on the following technologies:</p>
+        <br>
+        <ul>
+            <li><strong>Linked Data:</strong> All artifacts and excavation records are stored as RDF triples, enabling rich semantic relationships</li>
+            <li><strong>Knowledge Organization Systems:</strong> Standardized vocabularies ensure consistent terminology across projects</li>
+            <li><strong>GraphDB:</strong> A powerful triplestore database providing flexible querying capabilities</li>
+            <li><strong>Omeka S:</strong> An extensible digital collection management system</li>
+        </ul>
+    </section>
+    
+    <section class="about-section">
+        <h2>Features</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <h3>Excavation Documentation</h3>
+                <p>Comprehensive forms for capturing detailed excavation contexts, including squares, stratigraphic units, and timelines.</p>
+            </div>
+            
+            <div class="feature-card">
+                <h3>Artifact Recording</h3>
+                <p>Specialized forms for documenting artifacts with detailed morphological and contextual information.</p>
+            </div>
+            
+            <div class="feature-card">
+                <h3>Semantic Integration</h3>
+                <p>All data is mapped to standardized ontologies, ensuring interoperability with other archaeological datasets.</p>
+            </div>
+            
+            <div class="feature-card">
+                <h3>Advanced Search</h3>
+                <p>Powerful query capabilities across all excavation and artifact data using semantic relationships.</p>
+            </div>
+        </div>
+    </section>
+</div>
+
+<style>
+.about-us-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+    color: black;
+}
+
+.about-section {
+    margin-bottom: 3rem;
+    line-height: 1.6;
+    background-color: white;
+    border-radius: 12px;
+    padding: 30px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    border: 1px solid #e0e0e0;
+}
+
+h1 {
+    font-size: 2.5rem;
+    margin-bottom: 2rem;
+    color: white;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 1.5rem;
+    border-radius: 12px;
+    text-align: center;
+}
+
+h2 {
+    font-size: 1.8rem;
+    margin-bottom: 1.2rem;
+    color: #333;
+    border-bottom: 2px solid #764ba2;
+    padding-bottom: 0.5rem;
+}
+
+h3 {
+    font-size: 1.3rem;
+    margin-bottom: 0.8rem;
+    color: #764ba2;
+}
+
+ul {
+    padding-left: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+li {
+    margin-bottom: 0.5rem;
+    line-height: 1.5;
+}
+
+.features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1rem;
+}
+
+.feature-card {
+    background: white;
+    color: #333;
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    border: 1px solid #e0e0e0;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.feature-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.team-members {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 2rem;
+    margin-top: 1.5rem;
+}
+
+.team-member {
+    background-color: #ffffff;
+    border-left: 4px solid #764ba2;
+    padding: 1.5rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    transition: transform 0.2s ease;
+    border-radius: 0 8px 8px 0;
+}
+
+.team-member:hover {
+    transform: translateY(-3px);
+}
+
+.member-title {
+    font-style: italic;
+    color: #666;
+    margin-top: -0.5rem;
+    margin-bottom: 1rem;
+}
+
+/* Buttons and links styling to match other pages */
+.about-section a {
+    display: inline-block;
+    background: #764ba2;
+    color: white;
+    text-decoration: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-weight: 500;
+    transition: background 0.2s ease;
+}
+
+.about-section a:hover {
+    background: #673b8f;
+    text-decoration: none;
+    color: white;
+}
+
+@media (max-width: 768px) {
+    .features-grid, .team-members {
+        grid-template-columns: 1fr;
+    }
+    
+    h1 {
+        font-size: 2rem;
+    }
+    
+    .about-section {
+        padding: 20px;
+    }
+}
+</style>

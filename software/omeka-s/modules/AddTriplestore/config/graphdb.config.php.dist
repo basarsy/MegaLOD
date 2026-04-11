@@ -1,0 +1,13 @@
+<?php
+/**
+ * GraphDB connection configuration.
+ *
+ * Copy this file to graphdb.config.php and fill in real credentials.
+ * NEVER commit graphdb.config.php to version control.
+ */
+return [
+    'username'          => getenv('GRAPHDB_USERNAME') ?: 'CHANGE_ME',
+    'password'          => getenv('GRAPHDB_PASSWORD') ?: 'CHANGE_ME',
+    'readonly_username' => getenv('GRAPHDB_READONLY_USERNAME') ?: 'CHANGE_ME',
+    'readonly_password' => getenv('GRAPHDB_READONLY_PASSWORD') ?: 'CHANGE_ME',
+];

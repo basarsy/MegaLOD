@@ -1,0 +1,55 @@
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix dc: <http://purl.org/dc/terms/> .
+
+<https://purl.org/megalod/kos/axe-polished> a skos:ConceptScheme, prov:Entity ;
+    skos:prefLabel "Arrowhead shape"@en;
+    skos:hasTopConcept <https://purl.org/megalod/kos/axe-polished/sides>,
+        <https://purl.org/megalod/kos/axe-polished/edge>,
+        <https://purl.org/megalod/kos/axe-polished/mesial> ,
+        <https://purl.org/megalod/kos/axe-polished/proximal> ,
+        <https://purl.org/megalod/kos/axe-polished/oval> ;
+    dc:creator "Mariana Curado Malta(INESC TEC, Faculdade de Engenharia, Universidade do Porto, Portugal)" ;
+    dc:contributor "João Muralha (CHAM, Faculdade de Ciências Sociais e Humanas, Universidade Nova de Lisboa, Portugal)";
+    dc:date "2025-05-20"^^xsd:date ;
+    dc:title "Kos about the way the axe is polished"@en.
+
+
+<https://purl.org/megalod/kos/axe-polished/sides> a skos:Concept ;
+    skos:prefLabel "Sides"@en ;
+    skos:prefLabel "Flancos"@pt ;
+    skos:prefLabel "Triangulaire"@fr ;
+    skos:inScheme <https://purl.org/megalod/kos/axe-polished> ;
+    skos:topConceptOf <https://purl.org/megalod/kos/axe-polished>.
+
+<https://purl.org/megalod/kos/axe-polished/edge> a skos:Concept ;
+    skos:prefLabel "Edge"@en ;
+    skos:prefLabel "Gume"@pt ;
+    skos:prefLabel "Rectangulaire"@fr ;
+    skos:inScheme <https://purl.org/megalod/kos/axe-polished> ;
+    skos:topConceptOf <https://purl.org/megalod/kos/axe-polished>.
+
+<https://purl.org/megalod/kos/axe-polished/mesial> a skos:Concept ;
+    skos:prefLabel "Mesial"@en ;
+    skos:prefLabel "Mesial"@pt ;
+    skos:prefLabel "Mésial"@fr ;
+      skos:inScheme <https://purl.org/megalod/kos/axe-polished> ;
+    skos:topConceptOf <https://purl.org/megalod/kos/axe-polished>.
+
+<https://purl.org/megalod/kos/axe-polished/proximal> a skos:Concept ;
+    skos:prefLabel "Proximal"@en ;
+    skos:prefLabel "Proximal"@pt ;
+    skos:prefLabel "Proximal"@fr ;
+     skos:inScheme <https://purl.org/megalod/kos/axe-polished> ;
+    skos:topConceptOf <https://purl.org/megalod/kos/axe-polished>.
+
+<https://purl.org/megalod/kos/axe-polished/butt> a skos:Concept ;
+    skos:prefLabel "Butt"@en ;
+    skos:prefLabel "Talão"@pt ;
+    skos:prefLabel "Talon"@fr ;
+    skos:inScheme <https://purl.org/megalod/kos/axe-polished> ;
+    skos:topConceptOf <https://purl.org/megalod/kos/axe-polished>.

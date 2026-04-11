@@ -1,0 +1,54 @@
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix dc: <http://purl.org/dc/terms/> .
+
+
+<https://purl.org/megalod/kos/axe-edge> a skos:ConceptScheme, prov:Entity ;
+    skos:prefLabel "Axe edge"@en;
+    skos:hasTopConcept 
+        <https://purl.org/megalod/kos/axe-edge/light>,
+        <https://purl.org/megalod/kos/axe-edge/intense>,
+         <https://purl.org/megalod/kos/axe-edge/rounded>,
+          <https://purl.org/megalod/kos/axe-edge/flaked>,
+           <https://purl.org/megalod/kos/axe-edge/roughened> ;
+    dc:creator "Mariana Curado Malta(INESC TEC, Faculdade de Engenharia, Universidade do Porto, Portugal)" ;
+    dc:contributor "João Muralha (CHAM, Faculdade de Ciências Sociais e Humanas, Universidade Nova de Lisboa, Portugal) ";
+    dc:date "2024-04-25"^^xsd:date ;
+    dc:title "A taxonomy in SKOS about the axe property edge"@en.
+
+
+<https://purl.org/megalod/kos/axe-edge/light> a skos:Concept ;
+    skos:prefLabel "Light"@en ;
+    skos:prefLabel "Ligeiro"@pt ;
+    skos:notation "Légers"@fr;
+    skos:inScheme <https://purl.org/megalod/kos/axe-edge>;
+    skos:topConceptOf <https://purl.org/megalod/kos/axe-edge>.
+
+<https://purl.org/megalod/kos/axe-edge/intense> a skos:Concept ;
+    skos:prefLabel "Intense"@en ;
+    skos:prefLabel "Intensos"@pt ;
+    skos:notation "Intenses"@fr ;
+    skos:inScheme <https://purl.org/megalod/kos/axe-edge> ;
+    skos:topConceptOf <https://purl.org/megalod/kos/axe-edge>.
+
+    <https://purl.org/megalod/kos/axe-edge/rounded> a skos:Concept ;
+    skos:prefLabel "Rounded"@en ;
+    skos:prefLabel "Boleado"@pt ;
+    skos:notation "Arrondi"@fr ;
+    skos:inScheme <https://purl.org/megalod/kos/axe-edge> ;
+    skos:topConceptOf <https://purl.org/megalod/kos/axe-edge>.
+
+    <https://purl.org/megalod/kos/axe-edge/flaked> a skos:Concept ;
+    skos:prefLabel "Flaked"@en ;
+    skos:prefLabel "Lascado"@pt ;
+    skos:notation "Éclaté"@fr ;
+    skos:inScheme <https://purl.org/megalod/kos/axe-edge> ;
+    skos:topConceptOf <https://purl.org/megalod/kos/axe-edge>.
+
+    <https://purl.org/megalod/kos/axe-edge/roughened> a skos:Concept ;
+    skos:prefLabel "Roughened"@en ;
+    skos:prefLabel "Desbastado"@pt ;
+    skos:notation "Ébauché"@fr ;
+    skos:inScheme <https://purl.org/megalod/kos/axe-edge> ;
+    skos:topConceptOf <https://purl.org/megalod/kos/axe-edge>.

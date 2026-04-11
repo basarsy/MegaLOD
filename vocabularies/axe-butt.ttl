@@ -1,0 +1,40 @@
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix dc: <http://purl.org/dc/terms/> .
+
+
+<https://purl.org/megalod/kos/axe-butt> a skos:ConceptScheme, prov:Entity ;
+    skos:prefLabel "Axe butt"@en;
+    skos:hasTopConcept 
+        <https://purl.org/megalod/kos/axe-butt/truncated>,
+        <https://purl.org/megalod/kos/axe-butt/rectilinear>,
+         <https://purl.org/megalod/kos/axe-butt/rounded>, ;
+    dc:creator "Mariana Curado Malta(INESC TEC, Faculdade de Engenharia, Universidade do Porto, Portugal)" ;
+    dc:contributor "João Muralha (CHAM, Faculdade de Ciências Sociais e Humanas, Universidade Nova de Lisboa, Portugal) ";
+    dc:date "2025-05-25"^^xsd:date ;
+    dc:title "A taxonomy in SKOS about the axe property butt"@en.
+
+
+<https://purl.org/megalod/kos/axe-butt/truncated> a skos:Concept ;
+    skos:prefLabel "Truncated"@en ;
+    skos:prefLabel "Truncado"@pt ;
+    skos:notation "Tronqué"@fr;
+    skos:inScheme <https://purl.org/megalod/kos/axe-butt>;
+    skos:topConceptOf <https://purl.org/megalod/kos/axe-butt>.
+
+<https://purl.org/megalod/kos/axe-butt/rectilinear> a skos:Concept ;
+    skos:prefLabel "Rectilinear"@en ;
+    skos:prefLabel "Rectilíneo"@pt ;
+    skos:notation "Rectiligne"@fr ;
+    skos:inScheme <https://purl.org/megalod/kos/axe-butt> ;
+    skos:topConceptOf <https://purl.org/megalod/kos/axe-butt>.
+
+    <https://purl.org/megalod/kos/axe-butt/rounded> a skos:Concept ;
+    skos:prefLabel "Rounded"@en ;
+    skos:prefLabel "Redondo"@pt ;
+    skos:notation "Rond"@fr ;
+    skos:inScheme <https://purl.org/megalod/kos/axe-butt> ;
+    skos:topConceptOf <https://purl.org/megalod/kos/axe-butt>.
+
+   

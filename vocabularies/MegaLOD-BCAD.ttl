@@ -1,0 +1,33 @@
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix dc: <http://purl.org/dc/terms/> .
+
+
+<https://purl.org/megalod/kos/MegaLOD-BCAD> a skos:ConceptScheme, prov:Entity ;
+    skos:prefLabel "The era before or after christ"@en;
+    skos:hasTopConcept 
+        <https://purl.org/megalod/kos/MegaLOD-BCAD/BC>,
+        <https://purl.org/megalod/kos/MegaLOD-BCAD/AD>;
+    dc:creator "Mariana Curado Malta(INESC TEC, Faculdade de Engenharia, Universidade do Porto, Portugal)" ;
+    dc:contributor "João Muralha (CHAM, Faculdade de Ciências Sociais e Humanas, Universidade Nova de Lisboa, Portugal) ";
+    dc:date "2025-05-13"^^xsd:date ;
+    dc:title "Kos about excavation dates"@en.
+
+
+<https://purl.org/megalod/kos/MegaLOD-BCAD/BC> a skos:Concept ;
+    skos:prefLabel "BC - Before Christ"@en ;
+    skos:prefLabel "a.C. - Antes de Cristo"@pt ;
+    skos:prefLabel "Avant Jésus-Christ - av.J.-C."@;
+    skos:inScheme <https://purl.org/megalod/kos/MegaLOD-BCAD>;
+    skos:topConceptOf <https://purl.org/megalod/kos/MegaLOD-BCAD>.
+
+<https://purl.org/megalod/kos/MegaLOD-BCAD/AD> a skos:Concept ;
+    skos:prefLabel "After Christ - AD"@en ;
+    skos:prefLabel "Depois de Cristo - d.C."@pt ;
+    skos:prefLabel "Aprés Jésus-Christ - ap. J.-C."@fr ;
+    skos:inScheme <https://purl.org/megalod/kos/MegaLOD-BCAD>;
+    skos:topConceptOf <https://purl.org/megalod/kos/MegaLOD-BCAD>.

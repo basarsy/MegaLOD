@@ -1,0 +1,42 @@
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix dc: <http://purl.org/dc/terms/> .
+
+<https://purl.org/megalod/kos/ah-variant> a skos:ConceptScheme, prov:Entity ;
+    skos:prefLabel "Arrowhead variant"@en;
+    skos:hasTopConcept <https://purl.org/megalod/kos/ah-variant/flat>,
+        <https://purl.org/megalod/kos/ah-variant/raised>,
+        <https://purl.org/megalod/kos/ah-variant/thick> ;
+    dc:creator "Mariana Curado Malta(INESC TEC, Faculdade de Engenharia, Universidade do Porto, Portugal)" ;
+    dc:creator "María Luisa Díez Platas, (UNIR, Spain)" ;
+    dc:contributor "Américo Araújo (Universidade de Coimbra, Portugal) ";
+    dc:contributor "João Muralha (CHAM, Faculdade de Ciências Sociais e Humanas, Universidade Nova de Lisboa, Portugal)";
+    dc:date "2024-04-25"^^xsd:date ;
+    dc:title "Kos about arrowhead variant"@en.
+
+
+<https://purl.org/megalod/kos/ah-variant/flat> a skos:Concept ;
+    skos:prefLabel "Flat"@en ;
+    skos:prefLabel "Liso"@pt ;
+ 
+    skos:inScheme <https://purl.org/megalod/kos/ah-variant> ;
+    skos:topConceptOf <https://purl.org/megalod/kos/ah-variant> .
+
+<https://purl.org/megalod/kos/ah-variant/raised> a skos:Concept ;
+    skos:prefLabel "Raised"@en ;
+    skos:prefLabel "Elevado"@pt ;
+ 
+    skos:inScheme <https://purl.org/megalod/kos/ah-variant> ;
+    skos:topConceptOf <https://purl.org/megalod/kos/ah-variant>.
+
+
+<https://purl.org/megalod/kos/ah-variant/thick>  a skos:Concept ;
+    skos:prefLabel "Thick"@en ;
+    skos:prefLabel "Espesso"@pt ;
+
+    skos:inScheme <https://purl.org/megalod/kos/ah-variant> ;
+    skos:topConceptOf <https://purl.org/megalod/kos/ah-variant>.

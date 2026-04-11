@@ -1,0 +1,157 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix schema: <http://schema.org/> .
+@prefix voaf: <http://purl.org/vocommons/voaf#> .
+@prefix vann: <http://purl.org/vocab/vann/> .
+@prefix wdrs: <http://www.w3.org/2007/05/powder-s#> .
+@prefix excav: <https://purl.org/megalod/ms/excav/> .
+@prefix axe: <https://purl.org/megalod/ms/axe/> .
+
+
+# Metadata #
+
+<http://purl.org/megalod/ms/axe/> a voaf:Vocabulary, owl:Ontology;
+
+  voaf:classNumber 1 ;
+  voaf:propertyNumber 6 ;
+  dct:title "Asset Description Metadata Schema - Axes' Metadata Scheme"@en;
+  rdfs:label "Asset Description Metadata Schema - Axes' Metadata Scheme"@en;
+  dct:abstract "Axes V1.0 is an RDF vocabulary or a metadata scheme used to describe semantic assets, of archaeological findings of the Palaeolithic."@en;
+  dct:creator [
+        		   schema:affiliation <http://inesctec.pt>;
+		           schema:affiliation <http://fe.up.pt>;
+		           schema:affiliation <https://cham.fcsh.unl.pt>;
+		           schema:affiliation <https://www.fcsh.unl.pt>;
+  ] ;
+	dct:description "This is the RDF encoding of the data Model for the description of the Chalcolithic and Early/Middle Bronze Age axes .";
+	dct:modified "2025-05-11"^^xsd:date;
+	vann:preferredNamespacePrefix "axe";
+	vann:preferredNamespaceUri "http://www.purl.org/megalod/ms/axe/";
+	rdfs:comment "This file specifies the set of RDF classes and properties used in the Axes metadata scheme"@en;
+	wdrs:describedby <http://purl.org/megalod/ms/axe/> .
+
+
+
+              #======<>===============================<>=====#
+#===========  #------<>-------------------------------<>-----#  ===========#
+#===========  #------<>       CLASSES                 <>-----#  ===========#
+#===========  #------<>-------------------------------<>-----#	===========#
+              #======<>===============================<>=====#
+axe:Axe
+	a rdfs:Class;
+	rdfs:comment "An Axe."@en;
+	rdfs:subClassOf excav:Item;
+        rdfs:label "Axe"@en;
+	rdfs:label "Machado"@pt ;
+	redf:label "Biface"@fr.
+
+
+
+              #======<>===============================<>=====#
+#===========  #------<>-------------------------------<>-----#  ===========#
+#===========  #------<>          Properties           <>-----#  ===========#
+#===========  #------<>-------------------------------<>-----#	===========#
+              #======<>===============================<>=====#
+
+
+#>-----------------------------------------<#
+#>           Data Properties             <#
+#>-----------------------------------------<#
+
+axe:morphology
+	a rdf:Property,	owl:DataProperty;
+    rdfs:comment "The morphology of the axe. Use a term of the controlled vocabulary axe-morphology"@en;
+	rdfs:label "The axe - Morphology"@en;
+	rdfs:label "O machado - Morfologia"@pt;	
+	rdfs:label "Le biface - Morphologie"@fr;
+    rdfs:domain axe:Axe;
+	rdfs:range xsd:anyURI .
+
+axe:crossSection
+	a rdf:Property,	owl:DataProperty;
+	rdfs:comment "The cross section of the axe. Use a term of the controlled vocabulary axe-morphology."@en;
+	rdfs:label "The axe - Cross Section"@en;
+	rdfs:label "O machado - Secção Transversal"@pt;	
+	rdfs:label "Le biface - Section transversale"@fr;
+    rdfs:domain axe:Axe;
+	rdfs:range xsd:anyURI .
+
+axe:longitudinalSection
+	a rdf:Property,	owl:DataProperty;
+	rdfs:comment "The longitudinal section of the axe. Use a term of the controlled vocabulary  axe-longitudinalSection."@en;
+	rdfs:label "The axe - Longitudinal Section"@en;
+	rdfs:label "O machado - Secção Longitudinal"@pt;	
+	rdfs:label "Le biface - Section longitudinale"@fr;
+    rdfs:domain axe:Axe;
+	rdfs:range xsd:anyURI.
+
+axe:polished
+  	a rdf:Property,	owl:DataProperty;
+  	rdfs:comment "The polishing of the axe. Use a term of the controlled vocabulary  axe-polished."@en;
+  	rdfs:label "The axe - Polished"@en;
+	rdfs:label "O machado - Polimento"@pt;	
+	rdfs:label "Le biface - Poli"@fr;
+    rdfs:domain axe:Axe;
+  	rdfs:range xsd:anyURI.
+
+axe:edge
+	a rdf:Property,	owl:DataProperty;
+	rdfs:comment "The edge of the axe. Use a term of the controlled vocabulary  axe-edge."@en;
+	rdfs:label "The Axe-edge."@en;
+	rdfs:label "O machado - gume"@pt;	
+	rdfs:label "Le biface - tranchant"@fr;
+	rdfs:domain axe:Axe;
+	rdfs:range xsd:anyURI.
+
+axe:butt
+	a rdf:Property,	owl:DataProperty;
+	rdfs:comment "The butt of the axe. Use a term of the controlled vocabulary  axe-butt."@en;
+	rdfs:label "The Axe - butt."@en;
+	rdfs:label "O machado - talão"@pt;	
+	rdfs:label "Le biface - talon"@fr;
+	rdfs:domain axe:Axe;
+	rdfs:range xsd:anyURI.
+
+axe:tracesOfUse
+	a rdf:Property,	owl:DataProperty;
+        rdfs:comment "The traces of use of the axe.  Use a term of the controlled vocabulary  axe-polished"@en;
+	rdfs:label "The traces of use of the axe. "@en;
+	rdfs:label "O machado - Vestígios de Reutilização"@pt;	
+	rdfs:label "Le biface - Traces de réutilisation"@fr;
+        rdfs:domain axe:Axe;
+	rdfs:range xsd:anyURI.
+
+axe:tracesOReuUse
+	a rdf:Property,	owl:DataProperty;
+        rdfs:comment "The traces of Reuse of the axe.  Use a term of the controlled vocabulary  axe-tracesOfReuse"@en;
+	rdfs:label "The traces of use of the axe. "@en;
+	rdfs:label "O machado - Vestígios de Reutilização"@pt;	
+	rdfs:label "Le biface - Traces de réutilisation"@fr;
+        rdfs:domain axe:Axe;
+	rdfs:range xsd:anyURI.
+
+
+axe:tracesOfFixation
+	a rdf:Property,	owl:DataProperty;
+        rdfs:comment "The traces of Fixation of the axe.  Use a term of the controlled vocabulary  axe-tracesOfFixation"@en;
+	rdfs:label "The traces of fixation of the axe. "@en;
+	rdfs:label "O machado - Vestígios de fixação"@pt;	
+	rdfs:label "Le biface - Traces de fixation"@fr;
+        rdfs:domain axe:Axe;
+	rdfs:range xsd:boolean.
+  
+axe:repolishingAfterFracture
+	a rdf:Property,	owl:DataProperty;
+        rdfs:comment "If the axe has traces of repolishing After Fracture ."@en;
+	rdfs:label "Traces of repolishing After Fracture. "@en;
+	rdfs:label "O machado - Vestígios de repolimento após fractura"@pt;	
+	rdfs:label "Le biface - Traces de repolissage après fracture"@fr;
+        rdfs:domain axe:Axe;
+	rdfs:range xsd:boolean.
+
+#>---------------------------------------------------------<#
+#>      THE END END END END END END END END END            <#
+#>---------------------------------------------------------<#

@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<arrowheads>
+    <arrowhead id="003">
+        <identifier>ah-081</identifier>
+        
+        <!-- Images/Web Resources -->
+        <images>
+            <image>https://example.com/images/arrowhead-003.jpg</image>
+            <image>https://example.com/3d/arrowhead-003-model.obj</image>
+        </images>
+        
+        <!-- Annotations -->
+        <annotation>Large, stemmed arrowhead with bifacial retouch</annotation>
+        
+        <!-- Condition State -->
+        <conditionState>complete</conditionState>
+        
+        <!-- Date -->
+        <date>09-14-2013</date>
+        
+        <!-- Material -->
+        <material>http://vocab.getty.edu/page/aat/300018143</material>
+        
+        <!-- GPS Coordinates -->
+        <gpsCoordinates>
+            <latitude>41.2081</latitude>
+            <longitude>-8.6150</longitude>
+        </gpsCoordinates>
+        
+        <!-- Coordinates in Square -->
+        <coordinates>
+            <x value="15.3" unit="CMT"/>
+            <y value="88.9" unit="CMT"/>
+            <z value="0.9" unit="CMT"/>
+        </coordinates>
+        
+        <!-- Measurements -->
+        <measurements>
+            <height value="5.1" unit="CMT"/>
+            <width value="2.8" unit="CMT"/>
+            <thickness value="0.7" unit="CMT"/>
+            <weight value="12.5" unit="GRM"/>
+            <bodyLength value="4.5" unit="CMT"/>
+            <baseLength value="2.0" unit="CMT"/>
+        </measurements>
+        
+        <!-- Elongation and Thickness Index -->
+        <elongationIndex>Elongated</elongationIndex>
+        <thicknessIndex>Medium</thicknessIndex>
+        
+        <!-- Type (Elongate/Short) -->
+        <type>elongate</type>
+        
+        <!-- Shape -->
+        <shape>stemmed</shape>
+        
+        <!-- Variant -->
+        <variant>raised</variant>
+        
+        <!-- Morphology -->
+        <morphology>
+            <point>sharp</point>
+            <body>symmetrical</body>
+            <base>stemmed</base>
+        </morphology>
+        
+        <!-- Chipping -->
+        <chipping>
+            <mode>parallel</mode>
+            <amplitude>deep</amplitude>
+            <direction>bifacial</direction>
+            <delineation>composite</delineation>
+            <locationSide>distal</locationSide>
+            <locationSide>proximal</locationSide>
+            <locationTransversal>distal</locationTransversal>
+            <locationTransversal>proximal</locationTransversal>
+            <orientation>transverse</orientation>
+            <shape>convex</shape>
+        </chipping>
+        
+        <!-- Archaeological Context -->
+        <context>
+            <location>https://purl.org/megalod/location/monte-da-cerca</location>
+            <square>https://purl.org/megalod/square/C1</square>
+            <contextId>https://purl.org/megalod/context/CTX-003</contextId>
+            <svu>https://purl.org/megalod/svu/Layer-06</svu>
+        </context>
+    </arrowhead>
+    
+
+</arrowheads>

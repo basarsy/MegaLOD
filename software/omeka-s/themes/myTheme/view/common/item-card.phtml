@@ -1,0 +1,37 @@
+<?php
+$item = $this->item;
+?>
+
+<div class="item-card">
+  <?php if ($thumbnail = $this->thumbnail($item, 'square')): ?>
+    <div class="item-thumbnail">
+      <?= $thumbnail ?>
+    </div>
+  <?php else: ?>
+    <img src="https://via.placeholder.com/100x100" alt="Placeholder">
+  <?php endif; ?>
+
+  <div class="item-metadata">
+    <h3><?= $item->displayTitle() ?></h3>
+
+    <?php if ($material = $item->value('dbo:material')): ?>
+      <p class="item-material"><strong>Material:</strong> <?= $material ?></p>
+    <?php endif; ?>
+
+    <?php if ($rights = $item->value('dcterms:rights')): ?>
+      <p class="item-rights"><strong>Direitos:</strong> <?= $rights ?></p>
+    <?php endif; ?>
+
+    <?php if ($creator = $item->value('dcterms:creator')): ?>
+      <p class="item-creator"><strong>Criador:</strong> <?= $creator ?></p>
+    <?php endif; ?>
+
+    <?php if ($subject = $item->value('dcterms:subject')): ?>
+      <p class="item-subject"><strong>Tema:</strong> <?= $subject ?></p>
+    <?php endif; ?>
+
+    <?php if ($temporal = $item->value('dcterms:temporal')): ?>
+      <p class="item-temporal"><strong>Abrangência Temporal:</strong> <?= $temporal ?></p>
+    <?php endif; ?>
+  </div>
+</div>

@@ -1,0 +1,1775 @@
+<?php
+$this->headTitle('Search Archaeological Data');
+$this->headLink()->appendStylesheet($this->assetUrl('css/addTriplestore.css', 'AddTriplestore'));
+
+$this->headLink()->appendStylesheet('https://unpkg.com/leaflet@1.9.4/dist/leaflet.css');
+
+$this->headScript()->appendFile('https://unpkg.com/leaflet@1.9.4/dist/leaflet.js');
+
+
+$selectedShape = $this->params()->fromQuery('shape', '');
+$selectedVariant = $this->params()->fromQuery('variant', '');
+$selectedMaterial = $this->params()->fromQuery('material', '');
+$selectedElongation = $this->params()->fromQuery('elongation', '');
+$selectedThickness = $this->params()->fromQuery('thickness', '');
+$selectedBase = $this->params()->fromQuery('base', '');
+$selectedCondition = $this->params()->fromQuery('condition', '');
+$selectedChippingMode = $this->params()->fromQuery('chippingMode', '');
+$selectedChippingDirection = $this->params()->fromQuery('chippingDirection', '');
+$selectedChippingDelineation = $this->params()->fromQuery('chippingDelineation', '');
+$selectedChippingShape = $this->params()->fromQuery('chippingShape', '');
+$selectedChippingAmplitude = $this->params()->fromQuery('chippingAmplitude', '');
+
+
+$minHeight = $this->params()->fromQuery('minHeight', '');
+$maxHeight = $this->params()->fromQuery('maxHeight', '');
+$minWidth = $this->params()->fromQuery('minWidth', '');
+$maxWidth = $this->params()->fromQuery('maxWidth', '');
+$minThickness = $this->params()->fromQuery('minThickness', '');
+$maxThickness = $this->params()->fromQuery('maxThickness', '');
+$minWeight = $this->params()->fromQuery('minWeight', '');
+$maxWeight = $this->params()->fromQuery('maxWeight', '');
+
+
+$filterArchaeologist = isset($filterArchaeologist) ? $filterArchaeologist : '';
+$filterOrcid = isset($filterOrcid) ? $filterOrcid : '';
+$filterCountry = isset($filterCountry) ? $filterCountry : '';
+$filterDistrict = $this->params()->fromQuery('district', '');
+$filterParish = $this->params()->fromQuery('parish', '');
+
+
+$archaeologistOptions = isset($archaeologistOptions) ? $archaeologistOptions : [];
+$countryOptions = isset($countryOptions) ? $countryOptions : [];
+$districtOptions = isset($districtOptions) ? $districtOptions : [];
+$parishOptions = isset($parishOptions) ? $parishOptions : [];
+?>
+
+
+<div class="add-triplestore-search"><div class="add-triplestore-search">
+    <h1>Search Archaeological Data</h1>
+    
+    <form action="<?php echo $this->url('site/add-triplestore/search', ['site-slug' => $site->slug()]); ?>" method="get" class="search-form">
+        <div class="search-container">
+            <input type="text" name="query" value="<?php echo $this->escapeHtml($searchQuery); ?>" placeholder="Search excavations, arrowheads, or other artifacts..." class="search-input">
+            
+            <div class="search-type">
+                <label>
+                    <input type="radio" name="type" value="all" <?php echo ($searchType === 'all') ? 'checked' : ''; ?>>
+                    All
+                </label>
+                <label>
+                    <input type="radio" name="type" value="item_sets" <?php echo ($searchType === 'item_sets') ? 'checked' : ''; ?>>
+                    Excavations
+                </label>
+                <label>
+                    <input type="radio" name="type" value="items" <?php echo ($searchType === 'items') ? 'checked' : ''; ?>>
+                    Artifacts
+                </label>
+            </div>
+
+
+            
+            <button type="submit" class="search-button">Search</button>
+        </div>
+
+   
+
+<div class="filter-section excavation-filters <?php echo ($searchType === 'item_sets' || $searchType === 'all' || empty($searchType)) ? '' : 'hidden'; ?>"      style="<?php echo empty($searchQuery) ? 'display: none;' : ''; ?>">
+            <h3>Filter Excavations</h3>
+            
+            <div class="filter-controls">
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <label for="archaeologist">Archaeologist:</label>
+                        <select name="archaeologist" id="archaeologist">
+                            <option value="">Any Archaeologist</option>
+                            <?php foreach ($archaeologistOptions as $archaeologist): ?>
+                            <option value="<?= $this->escapeHtml($archaeologist['name']) ?>" 
+                                    <?= $filterArchaeologist == $archaeologist['name'] ? 'selected' : '' ?>>
+                                <?= $this->escapeHtml($archaeologist['name']) ?>
+                                <?= isset($archaeologist['orcid']) && $archaeologist['orcid'] ? ' (' . $this->escapeHtml($archaeologist['orcid']) . ')' : '' ?>
+                            </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="orcid">ORCID:</label>
+                        <input type="text" name="orcid" id="orcid" 
+                            value="<?= $this->escapeHtml($filterOrcid) ?>" 
+                            placeholder="0000-0000-0000-0000"
+                            class="orcid-input">
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="country">Country:</label>
+                        <select name="country" id="country">
+                            <option value="">Any Country</option>
+                            <?php foreach ($countryOptions as $country): ?>
+                            <option value="<?= $this->escapeHtml($country) ?>" 
+                                    <?= $filterCountry == $country ? 'selected' : '' ?>>
+                                <?= $this->escapeHtml($country) ?>
+                            </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label for="district">District:</label>
+                        <select name="district" id="district">
+                            <option value="">Any District</option>
+                            <?php foreach ($districtOptions as $district): ?>
+                            <option value="<?= $this->escapeHtml($district) ?>" 
+                                    <?= isset($filterDistrict) && $filterDistrict == $district ? 'selected' : '' ?>>
+                                <?= $this->escapeHtml($district) ?>
+                            </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label for="parish">Parish:</label>
+                        <select name="parish" id="parish">
+                            <option value="">Any Parish</option>
+                            <?php foreach ($parishOptions as $parish): ?>
+                            <option value="<?= $this->escapeHtml($parish) ?>" 
+                                    <?= isset($filterParish) && $filterParish == $parish ? 'selected' : '' ?>>
+                                <?= $this->escapeHtml($parish) ?>
+                            </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="filter-actions">
+                    <button type="submit" class="filter-button">Apply Filters</button>
+                    <button type="button" id="clearExcavationFilters" class="clear-button">Clear Filters</button>
+                </div>
+            </div>
+        </div>
+        
+
+        <div class="filter-section <?php echo ($searchType === 'items' || $searchType === 'all' || empty($searchType)) ? '' : 'hidden'; ?>" style="<?php echo empty($searchQuery) ? 'display: none;' : ''; ?>">
+            <h3>Filter Arrowheads</h3>
+            
+            <button type="button" id="toggleAdvancedFilters" class="toggle-filters-btn">Show Advanced Filters</button>
+            
+            <div class="filter-controls">
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <label for="shape">Shape:</label>
+                        <select name="shape" id="shape">
+                            <option value="">Any Shape</option>
+                            <option value="triangle" <?php echo ($selectedShape === 'triangle') ? 'selected' : ''; ?>>Triangular</option>
+                            <option value="lozenge-shaped" <?php echo ($selectedShape === 'lozenge-shaped') ? 'selected' : ''; ?>>Losangular</option>
+                            <option value="stemmed" <?php echo ($selectedShape === 'stemmed') ? 'selected' : ''; ?>>Stemmed</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="variant">Variant:</label>
+                        <select name="variant" id="variant">
+                            <option value="">Any Variant</option>
+                            <option value="flat" <?php echo ($selectedVariant === 'flat') ? 'selected' : ''; ?>>Flat</option>
+                            <option value="raised" <?php echo ($selectedVariant === 'raised') ? 'selected' : ''; ?>>Raised</option>
+                            <option value="thick" <?php echo ($selectedVariant === 'thick') ? 'selected' : ''; ?>>Thick</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="material">Material:</label>
+                        <select name="material" id="material">
+                            <option value="">Any Material</option>
+                            <option value="flint" <?php echo ($selectedMaterial === 'flint') ? 'selected' : ''; ?>>Flint</option>
+                            <option value="obsidian" <?php echo ($selectedMaterial === 'obsidian') ? 'selected' : ''; ?>>Obsidian</option>
+                            <option value="quartz" <?php echo ($selectedMaterial === 'quartz') ? 'selected' : ''; ?>>Quartz</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="elongation">Elongation:</label>
+                        <select name="elongation" id="elongation">
+                            <option value="">Any Elongation</option>
+                            <option value="Short" <?php echo ($selectedElongation === 'Short') ? 'selected' : ''; ?>>Short</option>
+                            <option value="Medium" <?php echo ($selectedElongation === 'Medium') ? 'selected' : ''; ?>>Medium</option>
+                            <option value="Elongated" <?php echo ($selectedElongation === 'Elongated') ? 'selected' : ''; ?>>Elongated</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="advanced-filters" style="display: none;">
+                    <h4>Morphology</h4>
+                    <div class="filter-row">
+                        <div class="filter-group">
+                            <label for="base">Base Type:</label>
+                            <select name="base" id="base">
+                                <option value="">Any Base</option>
+                                <option value="straight" <?php echo ($selectedBase === 'straight') ? 'selected' : ''; ?>>Straight</option>
+                                <option value="convex" <?php echo ($selectedBase === 'convex') ? 'selected' : ''; ?>>Convex</option>
+                                <option value="concave" <?php echo ($selectedBase === 'concave') ? 'selected' : ''; ?>>Concave</option>
+                                <option value="stemmed" <?php echo ($selectedBase === 'stemmed') ? 'selected' : ''; ?>>Stemmed</option>
+                                <option value="triangular" <?php echo ($selectedBase === 'triangular') ? 'selected' : ''; ?>>Triangular</option>
+                            </select>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label for="thickness">Thickness Index:</label>
+                            <select name="thickness" id="thickness">
+                                <option value="">Any Thickness</option>
+                                <option value="Thin" <?php echo ($selectedThickness === 'Thin') ? 'selected' : ''; ?>>Thin</option>
+                                <option value="Medium" <?php echo ($selectedThickness === 'Medium') ? 'selected' : ''; ?>>Medium</option>
+                                <option value="Thick" <?php echo ($selectedThickness === 'Thick') ? 'selected' : ''; ?>>Thick</option>
+                            </select>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label for="condition">Condition:</label>
+                            <select name="condition" id="condition">
+                                <option value="">Any Condition</option>
+                                <option value="true" <?php echo ($selectedCondition === 'true') ? 'selected' : ''; ?>>Complete</option>
+                                <option value="false" <?php echo ($selectedCondition === 'false') ? 'selected' : ''; ?>>Broken</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <h4>Chipping Characteristics</h4>
+                    <div class="filter-row">
+                        <div class="filter-group">
+                            <label for="chippingMode">Mode:</label>
+                            <select name="chippingMode" id="chippingMode">
+                                <option value="">Any Mode</option>
+                                <option value="plane" <?php echo ($selectedChippingMode === 'plane') ? 'selected' : ''; ?>>Plane</option>
+                                <option value="parallel" <?php echo ($selectedChippingMode === 'parallel') ? 'selected' : ''; ?>>Parallel</option>
+                                <option value="sub-parallel" <?php echo ($selectedChippingMode === 'sub-parallel') ? 'selected' : ''; ?>>Sub-parallel</option>
+                            </select>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label for="chippingDirection">Direction:</label>
+                            <select name="chippingDirection" id="chippingDirection">
+                                <option value="">Any Direction</option>
+                                <option value="direct" <?php echo ($selectedChippingDirection === 'direct') ? 'selected' : ''; ?>>Direct</option>
+                                <option value="reverse" <?php echo ($selectedChippingDirection === 'reverse') ? 'selected' : ''; ?>>Reverse</option>
+                                <option value="bifacial" <?php echo ($selectedChippingDirection === 'bifacial') ? 'selected' : ''; ?>>Bifacial</option>
+                            </select>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label for="chippingDelineation">Delineation:</label>
+                            <select name="chippingDelineation" id="chippingDelineation">
+                                <option value="">Any Delineation</option>
+                                <option value="continuous" <?php echo ($selectedChippingDelineation === 'continuous') ? 'selected' : ''; ?>>Continuous</option>
+                                <option value="composite" <?php echo ($selectedChippingDelineation === 'composite') ? 'selected' : ''; ?>>Composite</option>
+                                <option value="denticulated" <?php echo ($selectedChippingDelineation === 'denticulated') ? 'selected' : ''; ?>>Denticulated</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="filter-row">
+                        <div class="filter-group">
+                            <label for="chippingShape">Shape:</label>
+                            <select name="chippingShape" id="chippingShape">
+                                <option value="">Any Shape</option>
+                                <option value="straight" <?php echo ($selectedChippingShape === 'straight') ? 'selected' : ''; ?>>Straight</option>
+                                <option value="convex" <?php echo ($selectedChippingShape === 'convex') ? 'selected' : ''; ?>>Convex</option>
+                                <option value="concave" <?php echo ($selectedChippingShape === 'concave') ? 'selected' : ''; ?>>Concave</option>
+                                <option value="sinuous" <?php echo ($selectedChippingShape === 'sinuous') ? 'selected' : ''; ?>>Sinuous</option>
+                            </select>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label for="chippingAmplitude">Amplitude:</label>
+                            <select name="chippingAmplitude" id="chippingAmplitude">
+                                <option value="">Any Amplitude</option>
+                                <option value="true" <?php echo ($selectedChippingAmplitude === 'true') ? 'selected' : ''; ?>>Marginal</option>
+                                <option value="false" <?php echo ($selectedChippingAmplitude === 'false') ? 'selected' : ''; ?>>Deep</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <h4>Measurements</h4>
+                    <div class="filter-row">
+                        <div class="filter-group filter-range">
+                            <label>Height (mm):</label>
+                            <div class="range-inputs">
+                                <input type="number" name="minHeight" placeholder="Min" value="<?php echo $this->escapeHtml($minHeight); ?>" min="0" step="0.1">
+                                <span>to</span>
+                                <input type="number" name="maxHeight" placeholder="Max" value="<?php echo $this->escapeHtml($maxHeight); ?>" min="0" step="0.1">
+                            </div>
+                        </div>
+                        
+                        <div class="filter-group filter-range">
+                            <label>Width (mm):</label>
+                            <div class="range-inputs">
+                                <input type="number" name="minWidth" placeholder="Min" value="<?php echo $this->escapeHtml($minWidth); ?>" min="0" step="0.1">
+                                <span>to</span>
+                                <input type="number" name="maxWidth" placeholder="Max" value="<?php echo $this->escapeHtml($maxWidth); ?>" min="0" step="0.1">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="filter-row">
+                        <div class="filter-group filter-range">
+                            <label>Thickness (mm):</label>
+                            <div class="range-inputs">
+                                <input type="number" name="minThickness" placeholder="Min" value="<?php echo $this->escapeHtml($minThickness); ?>" min="0" step="0.1">
+                                <span>to</span>
+                                <input type="number" name="maxThickness" placeholder="Max" value="<?php echo $this->escapeHtml($maxThickness); ?>" min="0" step="0.1">
+                            </div>
+                        </div>
+                        
+                        <div class="filter-group filter-range">
+                            <label>Weight (g):</label>
+                            <div class="range-inputs">
+                                <input type="number" name="minWeight" placeholder="Min" value="<?php echo $this->escapeHtml($minWeight); ?>" min="0" step="0.1">
+                                <span>to</span>
+                                <input type="number" name="maxWeight" placeholder="Max" value="<?php echo $this->escapeHtml($maxWeight); ?>" min="0" step="0.1">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="filter-actions">
+                    <button type="submit" class="filter-button">Apply Filters</button>
+                    <button type="button" id="clearFilters" class="clear-button">Clear Filters</button>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    <!-- Map Section -->
+    <div class="map-section">
+        <div class="map-header">
+            <h2>Excavation Locations</h2>
+            <div class="map-controls">
+                <button id="toggleMap" class="toggle-btn">Hide Map</button>
+                <button id="centerMap" class="center-btn">Center Map</button>
+            </div>
+        </div>
+        <div id="excavationMap" class="excavation-map"></div>
+    </div>
+    <?php if ($searchQuery): ?>
+        <div class="search-results">
+            <h2>Search Results for "<?php echo $this->escapeHtml($searchQuery); ?>"</h2>
+            <p><?php echo $totalResults; ?> results found</p>
+            
+            <?php if (isset($results['item_sets']) && count($results['item_sets']) > 0): ?>
+                <div class="result-section">
+                    <h3>Excavations (<?php echo $totalItemSets; ?>)</h3>
+                    <div class="result-cards">
+                        <?php foreach ($results['item_sets'] as $itemSet): ?>
+                            <div class="result-card excavation-card" data-excavation-id="<?php echo $itemSet->id(); ?>">
+                                <h4><?php echo $this->escapeHtml($itemSet->displayTitle()); ?></h4>
+                                
+                                <?php if ($itemSet->displayDescription()): ?>
+                                    <div class="description"><?php echo $this->escapeHtml(substr($itemSet->displayDescription(), 0, 120)); ?>...</div>
+                                <?php endif; ?>
+                                
+                                <div class="location-info">
+                                    <?php
+                                    $values = $itemSet->values();
+                                    $locationParts = [];
+                                    $gpsCoords = null;
+                                    $lat = null;
+                                    $lng = null;
+                                    
+                                    foreach ($values as $term => $propertyValues) {
+                                        if (!empty($propertyValues)) {
+                                            foreach ($propertyValues as $propertyValue) {
+                                                if ($propertyValue && is_object($propertyValue) && method_exists($propertyValue, 'property') && $propertyValue->property()) {
+                                                    $propertyLabel = $propertyValue->property()->label();
+                                                    $value = $propertyValue->value();
+                                                    
+                                                    // Only look for GPS coordinates
+                                                    if (stripos($propertyLabel, 'latitude') !== false || $propertyLabel === 'GPS Latitude') {
+                                                        $lat = floatval($value);
+                                                    } 
+                                                    elseif (stripos($propertyLabel, 'longitude') !== false || $propertyLabel === 'GPS Longitude') {
+                                                        $lng = floatval($value);
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }                                                      
+                                    
+                                    // Store coordinates for map if we have them
+                                    if ($lat && $lng): 
+                                        $itemCount = 0;
+                                        try {
+                                                $itemCount = $itemSet->itemCount();
+
+                                        } catch (\Exception $e) {
+                                            $itemCount = 0;
+                                        }
+                                        
+                                        ?>
+                                        <script>
+                                            if (typeof excavationData === 'undefined') {
+                                                window.excavationData = [];
+                                            }
+                                            window.excavationData.push({
+                                                id: <?php echo $itemSet->id(); ?>,
+                                                title: <?php echo json_encode($itemSet->displayTitle()); ?>,
+                                                lat: <?php echo $lat; ?>,
+                                                lng: <?php echo $lng; ?>,
+                                                itemCount: <?php echo $itemCount; ?>,
+                                                location: <?php echo json_encode(implode(', ', array_filter($locationParts))); ?>,
+                                                parish: <?php echo json_encode($locationParts['parish'] ?? ''); ?>,
+                                                district: <?php echo json_encode($locationParts['district'] ?? ''); ?>,
+                                                country: <?php echo json_encode($locationParts['country'] ?? ''); ?>,
+                                                site: <?php echo json_encode($locationParts['site'] ?? ''); ?>
+                                            });
+                                            console.log('Added excavation data:', {
+                                                id: <?php echo $itemSet->id(); ?>,
+                                                title: <?php echo json_encode($itemSet->displayTitle()); ?>,
+                                                lat: <?php echo $lat; ?>,
+                                                lng: <?php echo $lng; ?>,
+                                                itemCount: <?php echo $itemCount; ?>,
+                                                locationParts: <?php echo json_encode($locationParts); ?>
+                                            });
+                                        </script>
+                                    <?php else:
+                                        error_log("No coordinates found for excavation: " . $itemSet->displayTitle() . " (ID: " . $itemSet->id() . ")", 3, '/tmp/omeka_map_debug.log');
+                                        
+                                        if (!empty($locationParts)) {
+                                            $locationString = implode(', ', array_filter($locationParts));
+                                            error_log("Could try geocoding: $locationString", 3, '/tmp/omeka_map_debug.log');
+                                            ?>
+                                            <script>
+                                                console.log('No coordinates for excavation but found location parts:', <?php echo json_encode($locationParts); ?>);
+                                            </script>
+                                            <?php
+                                        }
+                                    endif;
+                                    ?>
+                                </div>
+                                
+                                <div class="item-count">
+                                    <span class="count-icon">🏹</span>
+                                    <span class="count-text"><?php 
+                                        try {
+                                                $itemCount = $itemSet->itemCount();
+
+                                            echo $itemCount . ' artifact' . ($itemCount !== 1 ? 's' : '');
+                                        } catch (\Exception $e) {
+                                            echo '0 artifacts';
+                                        }
+                                    ?></span>
+                                </div>
+                                
+                                <div class="excavation-metadata">
+                                    <?php
+                                    foreach ($values as $term => $propertyValues) {
+                                        if (!empty($propertyValues) && isset($propertyValues[0]) && $propertyValues[0]->property()) {
+                                            $propertyLabel = $propertyValues[0]->property()->label();
+                                            $value = $propertyValues[0]->value();
+                                            
+                                            // Show archaeologist info
+                                            if (stripos($propertyLabel, 'person in charge') !== false || stripos($propertyLabel, 'archaeologist') !== false) {
+                                                echo '<div class="metadata-item"><span class="meta-icon">👤</span> ' . $this->escapeHtml($value) . '</div>';
+                                            }
+                                            // Show timeline info
+                                            elseif (stripos($propertyLabel, 'timeline') !== false || stripos($propertyLabel, 'period') !== false) {
+                                                echo '<div class="metadata-item"><span class="meta-icon">📅</span> ' . $this->escapeHtml($value) . '</div>';
+                                            }
+                                        }
+                                    }
+                                    ?>
+                                </div>
+                                
+                                <div class="actions">
+                                    <a href="<?php echo $this->url('site/add-triplestore/view-details', ['site-slug' => $site->slug()], ['query' => ['id' => $itemSet->id(), 'type' => 'item_set']]); ?>" class="details-button">View Details</a>
+                                    <a href="<?php echo $this->url('site/add-triplestore/upload', ['site-slug' => $site->slug()], ['query' => ['item_set_id' => $itemSet->id(), 'upload_type' => 'arrowhead', 'mode' => 'form']]); ?>" class="add-button">Add Artifacts</a>
+                                    <button class="map-button" onclick="focusOnExcavation(<?php echo $itemSet->id(); ?>)">Show on Map</button>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            <?php endif; ?>
+            
+            <?php if (isset($results['items']) && count($results['items']) > 0): ?>
+                <div class="result-section">
+                    <h3>Artifacts (<?php echo $totalItems; ?>)</h3>
+                    <div class="result-cards">
+                        <?php foreach ($results['items'] as $item): ?>
+                            <div class="result-card">
+                                <?php if ($item->thumbnail()): ?>
+                                    <div class="thumbnail">
+                                        <img src="<?php echo $this->escapeHtml($item->thumbnail()->assetUrl()); ?>" alt="<?php echo $this->escapeHtml($item->displayTitle()); ?>">
+                                    </div>
+                                <?php endif; ?>
+                                <h4><?php echo $this->escapeHtml($item->displayTitle()); ?></h4>
+                                <?php if ($item->displayDescription()): ?>
+                                    <div class="description"><?php echo $this->escapeHtml(substr($item->displayDescription(), 0, 100)); ?>...</div>
+                                <?php endif; ?>
+                                
+                                <div class="item-sets">
+                                    <?php if (count($item->itemSets()) > 0): ?>
+                                        <div class="metadata-field">
+                                            <span class="label">Excavation:</span> 
+                                            <?php foreach ($item->itemSets() as $index => $itemSet): ?>
+                                                <a href="<?php echo $this->url('site/add-triplestore/view-details', ['site-slug' => $site->slug()], ['query' => ['id' => $itemSet->id(), 'type' => 'item_set']]); ?>">
+                                                    <?php echo $this->escapeHtml($itemSet->displayTitle()); ?>
+                                                </a><?php if ($index < count($item->itemSets()) - 1) echo ', '; ?>
+                                            <?php endforeach; ?>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+                                
+                                <div class="actions">
+                                    <a href="<?php echo $this->url('site/add-triplestore/view-details', ['site-slug' => $site->slug()], ['query' => ['id' => $item->id(), 'type' => 'item']]); ?>" class="details-button">View Details</a>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            <?php endif; ?>
+            
+            <?php if ($totalResults === 0): ?>
+                <div class="no-results">
+                    <p>No results found for "<?php echo $this->escapeHtml($searchQuery); ?>". Try a different search term.</p>
+                </div>
+            <?php endif; ?>
+        </div>
+    <?php else: ?>
+        <div class="search-instructions">
+            <p>Enter a search term above to find excavations and artifacts, or click one of the quick links below to browse with advanced filters.</p>
+            
+            <div class="quick-links">
+                <h3>Quick Links</h3>
+                <p>Click any link below to see available filter options</p>
+                <ul>
+                    <li><a href="<?php echo $this->url('site/add-triplestore/search', ['site-slug' => $site->slug()], ['query' => ['query' => 'excavation', 'type' => 'item_sets']]); ?>" class="quick-link">Browse All Excavations</a></li>
+                    <li><a href="<?php echo $this->url('site/add-triplestore/search', ['site-slug' => $site->slug()], ['query' => ['query' => 'arrowhead', 'type' => 'items']]); ?>" class="quick-link">Browse Arrowheads</a></li>
+                </ul>
+            </div>
+        </div>
+    <?php endif; ?>
+</div>
+
+<style>
+.add-triplestore-search {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.add-triplestore-search h1 {
+    text-align: center;
+    font-size: 2.5rem;
+    color: #333;
+    margin-bottom: 30px;
+    font-weight: 300;
+}
+
+.search-container {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-bottom: 30px;
+    gap: 15px;
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+    color: gray;
+}
+
+.search-input {
+    flex: 1;
+    padding: 12px 16px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    min-width: 300px;
+    font-size: 16px;
+    transition: border-color 0.2s ease;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #4CAF50;
+}
+
+.search-type {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.search-type label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.search-button {
+    padding: 12px 24px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 500;
+    transition: background-color 0.2s ease;
+}
+
+.search-button:hover {
+    background-color: #45a049;
+}
+
+/* Map Section */
+.map-section {
+    margin: 30px 0;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+.map-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.map-header h2 {
+    margin: 0;
+    color: #333;
+    font-size: 1.5rem;
+    font-weight: 500;
+}
+
+.map-controls {
+    display: flex;
+    gap: 10px;
+}
+
+.toggle-btn, .center-btn {
+    padding: 8px 16px;
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+.toggle-btn:hover, .center-btn:hover {
+    background: #e9ecef;
+}
+
+.excavation-map {
+    height: 400px;
+    width: 100%;
+    transition: height 0.3s ease;
+}
+
+.excavation-map.hidden {
+    height: 0;
+    overflow: hidden;
+}
+
+.result-section {
+    margin-bottom: 40px;
+}
+
+.result-section h3 {
+    color: #333;
+    font-size: 1.8rem;
+    margin-bottom: 20px;
+    font-weight: 500;
+}
+
+.result-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 25px;
+}
+
+.result-card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+    border: 1px solid #f0f0f0;
+    position: relative;
+}
+
+.result-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+}
+
+.result-card.excavation-card {
+    border-left: 4px solid #4CAF50;
+}
+
+.result-card h4 {
+    margin-top: 0;
+    color: #333;
+    font-size: 1.3rem;
+    margin-bottom: 10px;
+    font-weight: 600;
+}
+
+.item-count {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 15px 0;
+    padding: 8px 12px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    font-weight: 500;
+    color: #495057;
+}
+
+.count-icon {
+    font-size: 1.2rem;
+}
+
+.location-info {
+    margin: 15px 0;
+    padding: 12px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    border-left: 3px solid #4CAF50;
+}
+
+.location-details {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.location-icon {
+    font-size: 16px;
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+.location-text {
+    flex: 1;
+}
+
+.location-address {
+    font-weight: 600;
+    color: #333;
+    font-size: 14px;
+    margin-bottom: 4px;
+}
+
+.location-region {
+    color: #666;
+    font-size: 13px;
+    margin-bottom: 6px;
+}
+
+.gps-coords {
+    color: #888;
+    font-size: 12px;
+    font-family: monospace;
+}
+
+.excavation-metadata {
+    margin: 15px 0;
+}
+
+.metadata-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 6px;
+    font-size: 13px;
+    color: #555;
+}
+
+.meta-icon {
+    font-size: 14px;
+    width: 16px;
+    text-align: center;
+}
+
+.actions {
+    margin-top: 20px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.details-button, .add-button, .map-button {
+    padding: 8px 12px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 500;
+    text-align: center;
+    flex: 1;
+    min-width: 80px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.details-button {
+    background-color: #2196F3;
+    color: white;
+}
+
+.add-button {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.map-button {
+    background-color: #FF9800;
+    color: white;
+}
+
+.details-button:hover {
+    background-color: #1976D2;
+}
+
+.add-button:hover {
+    background-color: #45a049;
+}
+
+.map-button:hover {
+    background-color: #F57C00;
+}
+
+.search-instructions {
+    background-color: #f9f9f9;
+    padding: 30px;
+    border-radius: 12px;
+    margin-top: 20px;
+    text-align: center;
+    color: gray;
+}
+
+.quick-links {
+    margin-top: 30px;
+    background: #f5f9f5;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.05);
+    border: 1px solid rgba(76, 175, 80, 0.2);
+}
+
+.quick-links h3 {
+    margin-top: 0;
+    color: #2e7d32;
+    font-size: 1.4rem;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+.quick-links p {
+    text-align: center;
+    color: #555;
+    margin-bottom: 20px;
+}
+
+.quick-links ul {
+    list-style-type: none;
+    padding-left: 0;
+    display: flex;
+    justify-content: center;
+    gap: 25px;
+    flex-wrap: wrap;
+}
+
+.quick-links li {
+    margin-bottom: 10px;
+}
+
+.quick-links a {
+    color: white;
+    text-decoration: none;
+    font-weight: 500;
+    padding: 12px 20px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    background-color: #4CAF50;
+    display: inline-block;
+    min-width: 180px;
+    text-align: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.quick-links a:hover {
+    background-color: #45a049;
+    transform: translateY(-3px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.filter-section {
+    transition: all 0.4s ease-in-out;
+    max-height: 2000px;
+    overflow: hidden;
+}
+
+.filter-section.hidden, 
+.filter-section[style*="display: none"] {
+    max-height: 0;
+    margin: 0;
+    padding: 0;
+    opacity: 0;
+}
+
+@media (max-width: 768px) {
+    .search-container {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .search-type {
+        justify-content: center;
+        margin: 10px 0;
+    }
+    
+    .result-cards {
+        grid-template-columns: 1fr;
+    }
+    
+    .actions {
+        flex-direction: column;
+    }
+    
+    .map-header {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+    }
+    
+    .quick-links ul {
+        flex-direction: column;
+        align-items: center;
+    }
+}
+
+.custom-marker {
+    background: #4CAF50;
+    color: white;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 12px;
+    border: 3px solid white;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+}
+
+.custom-marker.selected {
+    background: #FF9800;
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+
+
+
+.filter-section {
+    background-color: #f9f9f9;
+    border-radius: 12px;
+    padding: 15px 20px;
+    margin-top: 15px;
+    box-shadow: 0 1px 15px rgba(0,0,0,0.05);
+    transition: all 0.3s ease;
+}
+
+
+.excavation-filters {
+    background-color: #f9f9f9;
+    border-radius: 12px;
+    padding: 15px 20px;
+    margin-top: 15px;
+    box-shadow: 0 1px 15px rgba(0,0,0,0.05);
+    transition: all 0.3s ease;
+}
+
+.orcid-input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-family: monospace;
+    font-size: 14px;
+    background-color: white;
+}
+
+.excavation-filters.hidden {
+    display: none;
+}
+
+
+
+.filter-section.hidden {
+    display: none;
+}
+
+.filter-section h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-size: 1.2rem;
+    color: #333;
+    font-weight: 600;
+}
+
+.filter-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    align-items: flex-end;
+}
+
+.filter-group {
+    flex: 1;
+    min-width: 150px;
+    max-width: 250px;
+}
+
+.filter-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+    color: #444;
+    font-size: 14px;
+}
+
+.filter-group select {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    background-color: white;
+    font-size: 14px;
+}
+
+.filter-button {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 9px 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.filter-button:hover {
+    background-color: #45a049;
+}
+
+.clear-button {
+    background-color: #f8f9fa;
+    color: #333;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    padding: 8px 15px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.clear-button:hover {
+    background-color: #e9ecef;
+}
+
+@media (max-width: 768px) {
+    .filter-group {
+        flex: 1 0 100%;
+        max-width: 100%;
+    }
+    
+    .filter-button,
+    .clear-button {
+        flex: 1 0 calc(50% - 7.5px);
+        text-align: center;
+    }
+}
+
+.filter-section h4 {
+    margin: 20px 0 10px 0;
+    font-size: 16px;
+    color: #444;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 5px;
+}
+
+.filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.toggle-filters-btn {
+    background-color: #f0f0f0;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 8px 16px;
+    margin-bottom: 15px;
+    cursor: pointer;
+    font-weight: 500;
+    color: #333;
+    transition: all 0.2s;
+}
+
+.toggle-filters-btn:hover {
+    background-color: #e0e0e0;
+}
+
+.filter-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.advanced-filters {
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    padding: 15px;
+    margin-top: 10px;
+    box-shadow: inset 0 0 5px rgba(0,0,0,0.05);
+}
+
+.filter-range {
+    display: flex;
+    flex-direction: column;
+}
+
+.range-inputs {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.range-inputs input {
+    width: 80px;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.range-inputs span {
+    color: #666;
+    font-size: 14px;
+}
+</style>
+
+<script>
+let map;
+let markers = [];
+let selectedMarker = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof excavationData !== 'undefined') {
+        console.log('Excavation data found:', excavationData);
+    } else {
+        console.log('No excavation data found on page load');
+    }
+    
+    initializeMap();
+    
+    document.getElementById('toggleMap').addEventListener('click', function() {
+        const mapDiv = document.getElementById('excavationMap');
+        const toggleBtn = document.getElementById('toggleMap');
+        
+        if (mapDiv.classList.contains('hidden')) {
+            mapDiv.classList.remove('hidden');
+            toggleBtn.textContent = 'Hide Map';
+            setTimeout(() => {
+                map.invalidateSize();
+            }, 300);
+        } else {
+            mapDiv.classList.add('hidden');
+            toggleBtn.textContent = 'Show Map';
+        }
+    });
+    
+    document.getElementById('centerMap').addEventListener('click', function() {
+        if (markers.length > 0) {
+            const group = new L.featureGroup(markers);
+            map.fitBounds(group.getBounds().pad(0.1));
+        }
+    });
+});
+function initializeMap() {
+    map = L.map('excavationMap').setView([39.5, -8.0], 7);
+    
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+    
+    if (typeof excavationData !== 'undefined' && excavationData.length > 0) {
+        addExcavationMarkers();
+    } else {
+        loadAllExcavations();
+    }
+}
+
+
+document.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const hasSearchQuery = urlParams.has('query');
+    
+    const excavationFilters = document.querySelector('.excavation-filters');
+    const arrowheadFilters = document.querySelector('.filter-section:not(.excavation-filters)');
+    
+    if (hasSearchQuery) {
+        const searchType = urlParams.get('type') || 'all';
+        
+        if (searchType === 'item_sets' || searchType === 'all') {
+            excavationFilters.style.display = '';
+        } else {
+            excavationFilters.style.display = 'none';
+        }
+        
+        if (searchType === 'items' || searchType === 'all') {
+            arrowheadFilters.style.display = '';
+        } else {
+            arrowheadFilters.style.display = 'none';
+        }
+    } else {
+        if (excavationFilters) excavationFilters.style.display = 'none';
+        if (arrowheadFilters) arrowheadFilters.style.display = 'none';
+    }
+    
+    const searchTypeRadios = document.querySelectorAll('input[name="type"]');
+    
+    searchTypeRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            if (!hasSearchQuery) return;
+            
+            if (this.value === 'item_sets' || this.value === 'all') {
+                excavationFilters.style.display = '';
+                excavationFilters.classList.remove('hidden');
+            } else {
+                excavationFilters.style.display = 'none';
+                excavationFilters.classList.add('hidden');
+            }
+            
+            if (this.value === 'items' || this.value === 'all') {
+                arrowheadFilters.style.display = '';
+                arrowheadFilters.classList.remove('hidden');
+            } else {
+                arrowheadFilters.style.display = 'none';
+                arrowheadFilters.classList.add('hidden');
+            }
+        });
+    });
+    
+    const quickLinks = document.querySelectorAll('.quick-links a');
+    quickLinks.forEach(link => {
+        link.addEventListener('click', function() {
+            localStorage.setItem('fromQuickLink', 'true');
+        });
+    });
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    const toggleButton = document.getElementById('toggleAdvancedFilters');
+    const advancedFilters = document.querySelector('.advanced-filters');
+    
+    if (toggleButton && advancedFilters) {
+        toggleButton.addEventListener('click', function() {
+            const isHidden = advancedFilters.style.display === 'none';
+            advancedFilters.style.display = isHidden ? 'block' : 'none';
+            toggleButton.textContent = isHidden ? 'Hide Advanced Filters' : 'Show Advanced Filters';
+        });
+    }
+    
+    const filterSection = document.querySelector('.filter-section');
+    const searchTypeRadios = document.querySelectorAll('input[name="type"]');
+    
+    searchTypeRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            if (this.value === 'items' || this.value === 'all') {
+                filterSection.classList.remove('hidden');
+            } else {
+                filterSection.classList.add('hidden');
+            }
+        });
+    });
+
+    
+    const advancedFilterInputs = document.querySelectorAll(
+        '#base, #thickness, #condition, #chippingMode, #chippingDirection, ' +
+        '#chippingDelineation, #chippingShape, #chippingAmplitude, ' +
+        '[name="minHeight"], [name="maxHeight"], [name="minWidth"], [name="maxWidth"], ' +
+        '[name="minThickness"], [name="maxThickness"], [name="minWeight"], [name="maxWeight"]'
+    );
+    
+    let hasActiveAdvancedFilter = false;
+    
+    advancedFilterInputs.forEach(input => {
+        if (input.value) {
+            hasActiveAdvancedFilter = true;
+        }
+    });
+    
+    if (hasActiveAdvancedFilter && advancedFilters) {
+        advancedFilters.style.display = 'block';
+        toggleButton.textContent = 'Hide Advanced Filters';
+    }
+    
+    document.getElementById('clearFilters').addEventListener('click', function() {
+        const selects = filterSection.querySelectorAll('select');
+        const inputs = filterSection.querySelectorAll('input[type="number"]');
+        
+        selects.forEach(select => {
+            select.value = '';
+        });
+        
+        inputs.forEach(input => {
+            input.value = '';
+        });
+        
+        // Get the current URL
+        let currentUrl = new URL(window.location.href);
+        
+        let searchQuery = currentUrl.searchParams.get('query');
+        let searchType = currentUrl.searchParams.get('type');
+        
+        let newUrl = new URL(currentUrl.pathname, currentUrl.origin);
+        
+        if (searchQuery) {
+            newUrl.searchParams.set('query', searchQuery);
+        }
+        
+        if (searchType) {
+            newUrl.searchParams.set('type', searchType);
+        }
+        
+        window.location.href = newUrl.toString();
+    });
+});
+
+
+function focusOnExcavation(excavationId) {
+    let targetMarker = null;
+    for (let i = 0; i < markers.length; i++) {
+        if (markers[i].excavationId == excavationId) {
+            targetMarker = markers[i];
+            break;
+        }
+    }
+    
+    if (targetMarker) {
+        if (selectedMarker) {
+            const icon = selectedMarker.getIcon();
+            icon.options.className = icon.options.className.replace(' selected', '');
+            selectedMarker.setIcon(icon);
+        }
+        
+        const icon = targetMarker.getIcon();
+        icon.options.className += ' selected';
+        targetMarker.setIcon(icon);
+        
+        selectedMarker = targetMarker;
+        
+        map.setView(targetMarker.getLatLng(), 13);
+        targetMarker.openPopup();
+        
+        const mapDiv = document.getElementById('excavationMap');
+        if (mapDiv.classList.contains('hidden')) {
+            mapDiv.classList.remove('hidden');
+            document.getElementById('toggleMap').textContent = 'Hide Map';
+            setTimeout(() => {
+                map.invalidateSize();
+                map.setView(targetMarker.getLatLng(), 13);
+            }, 300);
+        }
+        
+        mapDiv.scrollIntoView({ behavior: 'smooth' });
+    } else {
+        console.log(`No marker found for excavation ID: ${excavationId}`);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const filterSection = document.querySelector('.filter-section');
+    const searchTypeRadios = document.querySelectorAll('input[name="type"]');
+    
+    searchTypeRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            if (this.value === 'items' || this.value === 'all') {
+                filterSection.classList.remove('hidden');
+            } else {
+                filterSection.classList.add('hidden');
+            }
+        });
+    });
+    
+    document.getElementById('clearFilters').addEventListener('click', function() {
+        const selects = filterSection.querySelectorAll('select');
+        selects.forEach(select => {
+            select.value = '';
+        });
+        
+        let currentUrl = new URL(window.location.href);
+        
+        let searchQuery = currentUrl.searchParams.get('query');
+        let searchType = currentUrl.searchParams.get('type');
+        
+        let newUrl = new URL(currentUrl.pathname, currentUrl.origin);
+        
+        if (searchQuery) {
+            newUrl.searchParams.set('query', searchQuery);
+        }
+        
+        if (searchType) {
+            newUrl.searchParams.set('type', searchType);
+        }
+        
+        window.location.href = newUrl.toString();
+    });
+});
+function addExcavationMarkers() {
+    excavationData.forEach(function(excavation) {
+        let locationHtml = '';
+        if (excavation.site) {
+            locationHtml += `<strong>${excavation.site}</strong><br>`;
+        }
+        if (excavation.parish && excavation.district && excavation.country) {
+            locationHtml += `${excavation.parish}, ${excavation.district}<br>${excavation.country}`;
+        } else if (excavation.location) {
+            locationHtml += excavation.location;
+        }
+        
+        let markerIcon;
+        if (excavation.itemCount > 20) {
+            markerIcon = L.divIcon({
+                className: 'custom-marker large-site',
+                html: excavation.itemCount,
+                iconSize: [35, 35]
+            });
+        } else if (excavation.itemCount > 5) {
+            markerIcon = L.divIcon({
+                className: 'custom-marker medium-site',
+                html: excavation.itemCount,
+                iconSize: [30, 30]
+            });
+        } else {
+            markerIcon = L.divIcon({
+                className: 'custom-marker small-site',
+                html: excavation.itemCount || '0',
+                iconSize: [25, 25]
+            });
+        }
+        
+        const marker = L.marker([excavation.lat, excavation.lng], {icon: markerIcon})
+            .addTo(map)
+            .bindPopup(`
+                <div class="map-popup">
+                    <h4>${excavation.title}</h4>
+                    <div class="popup-location">
+                        <span class="location-icon">📍</span>
+                        <div class="location-details">
+                            ${locationHtml}
+                        </div>
+                    </div>
+                    <div class="popup-stats">
+                        <span class="stat-item">
+                            <span class="stat-icon">🏹</span>
+                            <span class="stat-text">${excavation.itemCount} artifact${excavation.itemCount !== 1 ? 's' : ''}</span>
+                        </span>
+                        <span class="stat-item">
+                            <span class="stat-icon">🌍</span>
+                            <span class="stat-text">${excavation.lat.toFixed(4)}, ${excavation.lng.toFixed(4)}</span>
+                        </span>
+                    </div>
+                    <div class="popup-actions">
+                        <a href="<?php echo $this->url('site/add-triplestore/view-details', ['site-slug' => $site->slug()]); ?>?id=${excavation.id}&type=item_set" class="popup-btn primary">View Details</a>
+                        <a href="<?php echo $this->url('site/add-triplestore/upload', ['site-slug' => $site->slug()]); ?>?item_set_id=${excavation.id}&upload_type=arrowhead&mode=form" class="popup-btn secondary">Add Artifacts</a>
+                    </div>
+                </div>
+            `);
+        
+        marker.excavationId = excavation.id;
+        markers.push(marker);
+        
+        console.log(`Added marker for ${excavation.title} at ${excavation.lat}, ${excavation.lng}`);
+    });
+    
+    if (markers.length > 0) {
+        const group = new L.featureGroup(markers);
+        map.fitBounds(group.getBounds().pad(0.1));
+    } else {
+        console.log('No markers to display');
+        map.setView([39.5, -8.0], 7);
+    }
+}
+
+
+function loadAllExcavations() {
+    console.log('Loading all excavations via API...');
+    
+    fetch('/api/item_sets?pretty_print=1&sort_by=id&sort_order=desc')
+        .then(response => response.json())
+        .then(itemSets => {
+            console.log(`Found ${itemSets.length} item sets`);
+            window.excavationData = [];
+            
+            return itemSets.reduce((chain, itemSet) => {
+                return chain.then(() => processItemSet(itemSet));
+            }, Promise.resolve());
+        })
+        .then(() => {
+            console.log(`Adding ${window.excavationData.length} markers to map`);
+            addExcavationMarkers();
+        })
+        .catch(error => {
+            console.error('Error loading excavations:', error);
+        });
+}
+
+function processItemSet(itemSet) {
+    const itemSetId = itemSet['o:id'];
+    const itemSetTitle = itemSet['dcterms:title']?.[0]?.['@value'] || `Item Set ${itemSetId}`;
+    console.log(`Processing Item Set: ${itemSetTitle} (ID: ${itemSetId})`);
+    
+    let lat = extractCoordinateFromItemSet(itemSet, 'lat');
+    let lng = extractCoordinateFromItemSet(itemSet, 'lng');
+    
+    if (lat !== null && lng !== null) {
+        console.log(`Found GPS directly in item set ${itemSetId}: ${lat}, ${lng}`);
+        addToExcavationData(itemSetId, itemSetTitle, lat, lng, 0);
+        return Promise.resolve();
+    }
+    
+    return fetch(`/api/items?item_set_id=${itemSetId}&pretty_print=1`)
+        .then(response => response.json())
+        .then(items => {
+            console.log(`Item Set ${itemSetId} contains ${items.length} items`);
+            
+            const excavationItem = items.find(item => {
+                const title = item['dcterms:title']?.[0]?.['@value'] || '';
+                return title.startsWith('Excavation ');
+            });
+            
+            if (excavationItem) {
+                console.log(`Found excavation item: ${excavationItem['dcterms:title']?.[0]?.['@value']}`);
+                
+                lat = extractCoordinateFromItem(excavationItem, 'lat');
+                lng = extractCoordinateFromItem(excavationItem, 'lng');
+                
+                if (lat !== null && lng !== null) {
+                    addToExcavationData(itemSetId, itemSetTitle, lat, lng, items.length);
+                    return;
+                }
+            }
+            
+            for (const item of items) {
+                lat = extractCoordinateFromItem(item, 'lat');
+                lng = extractCoordinateFromItem(item, 'lng');
+                
+                if (lat !== null && lng !== null) {
+                    addToExcavationData(itemSetId, itemSetTitle, lat, lng, items.length);
+                    return;
+                }
+            }
+            
+            console.log(`No GPS coordinates found for item set ${itemSetId}`);
+        });
+}
+
+function extractCoordinateFromItem(item, type) {
+    console.log(`Extracting ${type} from item:`, item['dcterms:title']?.[0]?.['@value']);
+    
+    const coordProperties = {
+        lat: ['GPS Latitude', 'geo:lat', 'Latitude', 'Location - has GPS Coordinates', 'GPS Coordinates'],
+        lng: ['GPS Longitude', 'geo:long', 'Longitude', 'Location - has GPS Coordinates', 'GPS Coordinates']
+    };
+    
+    for (const propName of coordProperties[type]) {
+        if (item[propName]) {
+            console.log(`Found property ${propName} in item`);
+            
+            for (const value of item[propName]) {
+                if (value['@value']) {
+                    const valueStr = value['@value'];
+                    console.log(`Checking value: "${valueStr}"`);
+                    
+                    if (valueStr.includes("Latitude") && valueStr.includes("Longitude")) {
+                        console.log(`Found combined lat/lng string: ${valueStr}`);
+                        
+                        if (type === 'lat') {
+                            const latMatch = valueStr.match(/Latitude:\s*(-?\d+\.\d+)/i);
+                            if (latMatch && latMatch[1]) {
+                                const lat = parseFloat(latMatch[1]);
+                                console.log(`Extracted latitude: ${lat}`);
+                                return lat;
+                            }
+                        } else if (type === 'lng') {
+                            const lngMatch = valueStr.match(/Longitude:\s*(-?\d+\.\d+)/i);
+                            if (lngMatch && lngMatch[1]) {
+                                const lng = parseFloat(lngMatch[1]);
+                                console.log(`Extracted longitude: ${lng}`);
+                                return lng;
+                            }
+                        }
+                    }
+                    
+                    if ((type === 'lat' && /latitude/i.test(propName)) || 
+                        (type === 'lng' && /longitude/i.test(propName))) {
+                        const coord = extractNumberFromString(valueStr);
+                        if (coord !== null) {
+                            console.log(`Extracted ${type} directly: ${coord}`);
+                            return coord;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    console.log(`Searching all properties for ${type}...`);
+    for (const propName in item) {
+        if (item[propName] && Array.isArray(item[propName])) {
+            for (const value of item[propName]) {
+                if (value && value['@value'] && typeof value['@value'] === 'string') {
+                    const valueStr = value['@value'];
+                    
+                    if (valueStr.includes("Latitude") && valueStr.includes("Longitude")) {
+                        if (type === 'lat') {
+                            const latMatch = valueStr.match(/Latitude:\s*(-?\d+\.\d+)/i);
+                            if (latMatch && latMatch[1]) {
+                                const lat = parseFloat(latMatch[1]);
+                                console.log(`Found latitude ${lat} in property ${propName}`);
+                                return lat;
+                            }
+                        } else if (type === 'lng') {
+                            const lngMatch = valueStr.match(/Longitude:\s*(-?\d+\.\d+)/i);
+                            if (lngMatch && lngMatch[1]) {
+                                const lng = parseFloat(lngMatch[1]);
+                                console.log(`Found longitude ${lng} in property ${propName}`);
+                                return lng;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    return null;
+}
+
+function extractCoordinateFromItemSet(itemSet, type) {
+    console.log(`Extracting ${type} from item set ID: ${itemSet['o:id']}`);
+    
+    const coordProperties = {
+        lat: ['GPS Latitude', 'geo:lat', 'Latitude', 'Location - has GPS Coordinates', 'GPS Coordinates'],
+        lng: ['GPS Longitude', 'geo:long', 'Longitude', 'Location - has GPS Coordinates', 'GPS Coordinates']
+    };
+    
+    for (const propName of coordProperties[type]) {
+        if (itemSet[propName]) {
+            console.log(`Found property ${propName} in item set ${itemSet['o:id']}`);
+            
+            for (const value of itemSet[propName]) {
+                if (value['@value']) {
+                    const valueStr = value['@value'];
+                    console.log(`Checking value: "${valueStr}"`);
+                    
+                    if (valueStr.includes("Latitude") && valueStr.includes("Longitude")) {
+                        console.log(`Found combined lat/lng string: ${valueStr}`);
+                        
+                        if (type === 'lat') {
+                            const latMatch = valueStr.match(/Latitude:\s*(-?\d+\.\d+)/i);
+                            if (latMatch && latMatch[1]) {
+                                const lat = parseFloat(latMatch[1]);
+                                console.log(`Extracted latitude: ${lat} from item set ${itemSet['o:id']}`);
+                                return lat;
+                            }
+                        } else if (type === 'lng') {
+                            const lngMatch = valueStr.match(/Longitude:\s*(-?\d+\.\d+)/i);
+                            if (lngMatch && lngMatch[1]) {
+                                const lng = parseFloat(lngMatch[1]);
+                                console.log(`Extracted longitude: ${lng} from item set ${itemSet['o:id']}`);
+                                return lng;
+                            }
+                        }
+                    }
+                    
+                    if ((type === 'lat' && /latitude/i.test(propName)) || 
+                        (type === 'lng' && /longitude/i.test(propName))) {
+                        const coord = extractNumberFromString(valueStr);
+                        if (coord !== null) {
+                            console.log(`Extracted ${type} directly: ${coord} from item set ${itemSet['o:id']}`);
+                            return coord;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    console.log(`Searching all properties of item set ${itemSet['o:id']} for ${type}...`);
+    for (const propName in itemSet) {
+        if (itemSet[propName] && Array.isArray(itemSet[propName])) {
+            for (const value of itemSet[propName]) {
+                if (value && value['@value'] && typeof value['@value'] === 'string') {
+                    const valueStr = value['@value'];
+                    
+                    if (valueStr.includes("Latitude") && valueStr.includes("Longitude")) {
+                        if (type === 'lat') {
+                            const latMatch = valueStr.match(/Latitude:\s*(-?\d+\.\d+)/i);
+                            if (latMatch && latMatch[1]) {
+                                const lat = parseFloat(latMatch[1]);
+                                console.log(`Found latitude ${lat} in property ${propName} of item set ${itemSet['o:id']}`);
+                                return lat;
+                            }
+                        } else if (type === 'lng') {
+                            const lngMatch = valueStr.match(/Longitude:\s*(-?\d+\.\d+)/i);
+                            if (lngMatch && lngMatch[1]) {
+                                const lng = parseFloat(lngMatch[1]);
+                                console.log(`Found longitude ${lng} in property ${propName} of item set ${itemSet['o:id']}`);
+                                return lng;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    return null;
+}
+
+function extractNumberFromString(str) {
+    const matches = str.match(/-?\d+\.\d+/);
+    if (matches && matches.length > 0) {
+        return parseFloat(matches[0]);
+    }
+    return null;
+}
+
+function addToExcavationData(id, title, lat, lng, itemCount) {
+    window.excavationData.push({
+        id: id,
+        title: title,
+        lat: lat,
+        lng: lng,
+        itemCount: itemCount
+    });
+    console.log(`Added excavation to map: ${title}, Lat: ${lat}, Lng: ${lng}`);
+}
+</script>

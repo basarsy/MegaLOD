@@ -1,0 +1,41 @@
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix dc: <http://purl.org/dc/terms/> .
+
+<https://purl.org/megalod/kos/ah-chippingLocation> a skos:ConceptScheme, prov:Entity ;
+    skos:prefLabel "Arrowhead chipping location"@en;
+    skos:hasTopConcept <https://purl.org/megalod/kos/ah-chippingLocation/median>,
+        <https://purl.org/megalod/kos/ah-chippingLocation/distal>,
+        <https://purl.org/megalod/kos/ah-chippingLocation/proximal>;
+    dc:creator "Mariana Curado Malta(INESC TEC, Faculdade de Engenharia, Universidade do Porto, Portugal)" ;
+    dc:creator "María Luisa Díez Platas, (UNIR,Spain)" ;
+    dc:contributor "Américo Araújo (Universidade de Coimbra, Portugal) ";
+    dc:contributor "João Muralha (CHAM, Faculdade de Ciências Sociais e Humanas, Universidade Nova de Lisboa, Portugal)";
+    dc:date "2024-04-25"^^xsd:date ;
+    dc:title "KOS about arrowhead chipping location"@en.
+
+
+<https://purl.org/megalod/kos/ah-chippingLocation/distal> a skos:Concept ;
+    skos:prefLabel "Distal"@en ;
+    skos:prefLabel "Distal"@pt ;
+  
+    skos:inScheme <https://purl.org/megalod/kos/ah-chippingLocation> ;
+    skos:topConceptOf <https://purl.org/megalod/kos/ah-chippingLocation>.
+
+<https://purl.org/megalod/kos/ah-chippingLocation/median> a skos:Concept ;
+    skos:prefLabel "Median"@en ;
+    skos:prefLabel "Mediana"@pt ;
+   
+    skos:inScheme <https://purl.org/megalod/kos/ah-chippingLocation> ;
+    skos:topConceptOf <https://purl.org/megalod/kos/ah-chippingLocation>.
+
+<https://purl.org/megalod/kos/ah-chippingLocation/proximal> a skos:Concept ;
+    skos:prefLabel "Proximal"@en ;
+    skos:prefLabel "Proximal"@pt ;
+  
+    skos:inScheme <https://purl.org/megalod/kos/ah-chippingLocation> ;
+    skos:topConceptOf <https://purl.org/megalod/kos/ah-chippingLocation>.

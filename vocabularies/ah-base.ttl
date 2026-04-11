@@ -1,0 +1,61 @@
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix dc: <http://purl.org/dc/terms/> .
+
+
+<https://purl.org/megalod/kos/ah-base> a skos:ConceptScheme, prov:Entity ;
+    skos:prefLabel "Arrowhead base"@en;
+    skos:hasTopConcept 
+        <https://purl.org/megalod/kos/ah-base/straight>,
+        <https://purl.org/megalod/kos/ah-base/convex>,
+        <https://purl.org/megalod/kos/ah-base/concave>,
+        <https://purl.org/megalod/kos/ah-base/stemmed>,
+        <https://purl.org/megalod/kos/ah-base/triangular>;
+    dc:creator "Mariana Curado Malta(INESC TEC, Faculdade de Engenharia, Universidade do Porto, Portugal)" ;
+    dc:creator "María Luisa Díez Platas, (UNIR, Spain)" ;
+    dc:contributor "Américo Araújo (Universidade de Coimbra, Portugal) ";
+    dc:contributor "João Muralha (CHAM, Faculdade de Ciências Sociais e Humanas, Universidade Nova de Lisboa, Portugal) ";
+    dc:date "2024-04-25"^^xsd:date ;
+    dc:modified "2025-05-13"^^xsd:date ;
+    dc:title "A Taxonomy to be used with the term ah:base"@en.
+
+
+<https://purl.org/megalod/kos/ah-base/straight> a skos:Concept ;
+    skos:prefLabel "Straight"@en ;
+    skos:prefLabel "Reto"@pt ;
+    skos:prefLabel "Droite"@fr;
+    skos:inScheme <https://purl.org/megalod/kos/ah-base>;
+    skos:topConceptOf <https://purl.org/megalod/kos/ah-base>.
+
+<https://purl.org/megalod/kos/ah-base/convex> a skos:Concept ;
+    skos:prefLabel "Convex"@en ;
+    skos:prefLabel "Convexo"@pt ;
+    skos:prefLabel "Convex"@fr;
+    skos:inScheme <https://purl.org/megalod/kos/ah-base> ;
+    skos:topConceptOf <https://purl.org/megalod/kos/ah-base>.
+
+<https://purl.org/megalod/kos/ah-base/concave> a skos:Concept ;
+    skos:prefLabel "Concave"@en ;
+    skos:prefLabel "Côncavo"@pt ;
+    skos:prefLabel "Concave"@fr;
+    skos:inScheme <https://purl.org/megalod/kos/ah-base> ;
+    skos:topConceptOf <https://purl.org/megalod/kos/ah-base>.
+
+
+<https://purl.org/megalod/kos/ah-base/stemmed> a skos:Concept ;
+    skos:prefLabel "Stemmed"@en ;
+    skos:prefLabel "Pedunculado"@pt ;
+    skos:prefLabel "Pédonculée"@fr;
+    skos:inScheme <https://purl.org/megalod/kos/ah-base> ;
+    skos:topConceptOf <https://purl.org/megalod/kos/ah-base>.
+
+<https://purl.org/megalod/kos/ah-base/triangular> a skos:Concept ;
+    skos:prefLabel "Triangular"@en ;
+    skos:prefLabel "Triangular"@pt ;
+    skos:prefLabel "Triangulaire"@fr;
+    skos:inScheme <https://purl.org/megalod/kos/ah-base> ;
+    skos:topConceptOf <https://purl.org/megalod/kos/ah-base>.

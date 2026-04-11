@@ -1,0 +1,42 @@
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix dc: <http://purl.org/dc/terms/> .
+
+
+<https://purl.org/megalod/kos/MegaLOD-IndexThickness> a skos:ConceptScheme, prov:Entity ;
+    skos:prefLabel "The Thickness Index of the Item - used as controlled term in excav:thicknessIndex"@en;
+    skos:hasTopConcept 
+        <https://purl.org/megalod/kos/MegaLOD-IndexThickness/thin>,
+        <https://purl.org/megalod/kos/MegaLOD-IndexThickness/medium>,
+        <https://purl.org/megalod/kos/MegaLOD-IndexThickness/thick>;
+    dc:creator "Mariana Curado Malta(INESC TEC, Faculdade de Engenharia, Universidade do Porto, Portugal)" ;
+    dc:contributor "João Muralha (CHAM, Faculdade de Ciências Sociais e Humanas, Universidade Nova de Lisboa, Portugal) ";
+    dc:date "2025-05-13"^^xsd:date ;
+    dc:title "A taxonomy to categorise Thickness Indexes of lithic Items of the Paleolithic"@en.
+
+
+<https://purl.org/megalod/kos/MegaLOD-IndexThickness/Thin> a skos:Concept ;
+    skos:prefLabel "Thin"@en ;
+    skos:prefLabel "Abatido"@pt ;
+    skos:prefLabel "Aminci"@fr ;
+    skos:inScheme <https://purl.org/megalod/kos/MegaLOD-IndexThickness>;
+    skos:topConceptOf <https://purl.org/megalod/kos/MegaLOD-IndexThickness>.
+
+<https://purl.org/megalod/kos/MegaLOD-IndexThickness/Medium> a skos:Concept ;
+    skos:prefLabel "Medium"@en ;
+    skos:prefLabel "Mediano"@pt ;
+    skos:prefLabel "Moyen"@fr ;
+    skos:inScheme <https://purl.org/megalod/kos/MegaLOD-IndexThickness>;
+    skos:topConceptOf <https://purl.org/megalod/kos/MegaLOD-IndexThickness>.
+
+
+<https://purl.org/megalod/kos/MegaLOD-IndexThickness/Thick> a skos:Concept ;
+    skos:prefLabel "Thick"@en ;
+    skos:prefLabel "Alteado"@pt ;
+    skos:prefLabel "Épais"@fr ;
+    skos:inScheme <https://purl.org/megalod/kos/MegaLOD-IndexThickness>;
+    skos:topConceptOf <https://purl.org/megalod/kos/MegaLOD-IndexThickness>.

@@ -1,0 +1,197 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix schema: <http://schema.org/> .
+@prefix crm:<http://www.cidoc-crm.org/cidoc-crm/> .
+@prefix voaf: <http://purl.org/vocommons/voaf#> .
+@prefix vann: <http://purl.org/vocab/vann/> .
+@prefix wdrs: <http://www.w3.org/2007/05/powder-s#> .
+@prefix ah: <https://purl.org/megalod/ms/ah/> .
+@prefix excav: <https://purl.org/megalod/ms/excavation/> .
+
+
+              #======<>===============================<>=====#
+#===========  #------<>-------------------------------<>-----#  ===========#
+#===========  #------<>       CLASSES                 <>-----#  ===========#
+#===========  #------<>-------------------------------<>-----#	===========#
+              #======<>===============================<>=====#
+ah:Arrowhead
+	a rdfs:Class;
+	rdfs:comment "A Arrowhead."@en ;
+	rdfs:subClassOf excav:Item ;
+        rdfs:label "ArrowHead"@en ;
+	rdfs:label "Ponta de Seta"@pt .
+
+ah:Morphology
+	a rdfs:Class;
+	rdfs:comment "Morphology of the arrowhead."@en ;
+	rdfs:comment "Morphologia da Ponta de Seta."@pt ;
+	rdfs:label "Morphoplogy"@en ;
+	rdfs:label "Morfologia"@pt .
+
+ah:Chipping
+	a rdfs:Class;
+	rdfs:comment "Chipping of the arrowhead."@en ;
+ 	rdfs:label "ArrowHead - Chipping"@en ;
+	rdfs:label "Chipping"@en .
+
+
+
+              #======<>===============================<>=====#
+#===========  #------<>-------------------------------<>-----#  ===========#
+#===========  #------<>          Properties           <>-----#  ===========#
+#===========  #------<>-------------------------------<>-----#	===========#
+              #======<>===============================<>=====#
+
+#>-----------------------------------------<#
+#>           Object Properties             <#
+#>-----------------------------------------<#
+
+ah:hasMorphology
+	a rdf:Property,	owl:ObjectProperty ;
+	rdfs:comment "This property points to an instance of the definition of the morphology of the arrowhead."@en ;
+	rdfs:label "ArrowHead - morphology"@en ;
+	rdfs:domain ah:Arrowhead ;
+	rdfs:range ah:Morphology .
+
+ah:hasChipping
+  a rdf:Property, owl:ObjectProperty ;
+  rdfs:comment "This Property points to an instance of the definition of the chipping of the arrowhead."@en ;
+  rdfs:label "ArrowHead - has chipping"@en ;
+  rdfs:domain ah:Arrowhead ;
+  rdfs:range ah:Chipping .
+
+ah:hasBodyLength
+	a rdf:Property,	owl:ObjectProperty;
+        rdfs:subPropertyOf crm:E54_Dimension ;
+	rdfs:comment "Points to a class that gives the length of the body of the arrowhead."@en;
+	rdfs:label "ArrowHead - bodyLength"@en;
+        rdfs:domain ah:Arrowhead;
+	rdfs:range excav:TypometryValue .
+
+ah:hasBaseLength
+	a rdf:Property,	owl:ObjectProperty ;
+        rdfs:subPropertyOf crm:E54_Dimension ;
+	rdfs:comment "Points to a class that presents the length of the base of the arrowhead."@en ;
+	rdfs:label "ArrowHead - baseLength"@en ;
+        rdfs:domain ah:Arrowhead ;
+	rdfs:range excav:TypometryValue .
+
+#>-----------------------------------------<#
+#>           Data Properties             <#
+#>-----------------------------------------<#
+
+ah:shape
+	a rdf:Property,	owl:DataProperty;
+	rdfs:comment "This property records the shape of the arrowhead. A good practice is to use the controlled vocabulary  AH-Shape."@en;
+	rdfs:label "ArrowHead - shape"@en;
+        rdfs:domain ah:Arrowhead;
+	rdfs:range xsd:anyURI.
+
+ah:variant
+  	a rdf:Property,	owl:DataProperty;
+  	rdfs:comment "This property records the variant of the arrowhead. A good practice is to use the controlled vocabulary  AH-Variant."@en;
+  	rdfs:label "ArrowHead - Variant"@en;
+        rdfs:domain ah:Arrowhead;
+  	rdfs:range xsd:anyURI.
+
+ah:point
+	a rdf:Property,	owl:DataProperty;
+	rdfs:comment "Definition of the tip of the arrowhead. Sharp=True;Fractured=False."@en;
+	rdfs:comment "Definição da ponta da ponta de seta. Piquant=True;Não Piquant=False."@pt;
+	rdfs:label "Arrowhead-point - point. Sharp=True;Fractured=False"@en;
+  	rdfs:label "Arrowhead-point - point. Piquant=True;Não Piquant=False"@pt;
+	rdfs:domain ah:Morphology;
+	rdfs:range xsd:boolean.
+
+ah:body
+	a rdf:Property,	owl:DataProperty;
+        rdfs:comment "THis property is used to define the simmetry of the body of the arrowhead. Symmetrical=True; Non-symmetrical=False"@en;
+	rdfs:comment "Esta propriedade define a simetria da base da ponta de seta. Simétrica=True; Não simétrica=False";
+	rdfs:label "Arrowhead-Morphology - body. Symmetrical=True; Non-symmetrical=False. "@en;
+	rdfs:label "Arrowhead-Morphology - body. Simétrica=True; Não Simétrica=False. "@pt;
+        rdfs:domain ah:Morphology;
+	rdfs:range xsd:boolean.
+
+ah:base
+	a rdf:Property,	owl:DataProperty;
+	rdfs:comment "This properties defines the base of the arrowhead. A good pratice is to use the controlled vocabulary AH-Base."@en;
+	rdfs:comment "Esta propriedade é usada para categorizar a base da ponta de seta. Usar o vocabulário controlado AH-Base."@pt;	
+	rdfs:label "ArrowHead - Morphology - Base. A good pratice is to use the Controlled Vocabulary AH-Base. "@en;
+	rdfs:label "ArrowHead - Morphology - Base. Uma boa prática é usar o vocabulário controlado AH-Base. "@pt;
+	rdfs:domain ah:Morphology;
+	rdfs:range xsd:anyURI.
+
+  ah:chippingMode
+  	a rdf:Property,	owl:DataProperty;
+  	rdfs:comment "Type of retouching incidence, defines the angle formed by the retouching line and the chipping surface. A good pratice is to use the Controlled Vocabulary AH-ChippingMode."@en;
+        rdfs:comment "Tipo de incidência do retoque, define o ângulo formado pela linha de retoque e a superfície de lascagem. Usar o vocabulário controlado AH-chippingMode."@pt;  	
+  	rdfs:label "Arrowhead-Chipping-mode"@en;
+        rdfs:domain ah:Chipping;
+  	rdfs:range xsd:anyURI.
+
+ah:chippingAmplitude
+	a rdf:Property,	owl:DataProperty;
+	rdfs:comment "Retouching extension, Marginal=True;Deep=False."@en;
+        rdfs:comment "Extensão do retoque, Marginal=True;Profundo=False."@pt;
+	rdfs:label "Arrowhead-Chipping-amplitude"@en;
+        rdfs:domain ah:Chipping;
+	rdfs:range xsd:boolean.
+
+ah:chippingDirection
+	a rdf:Property,	owl:DataProperty;
+	rdfs:comment "It results from the position in which the chip or blade is placed to be retouched. A good pratice is to use the Controlled Vocabulary AH-ChippingDirection."@en;
+        rdfs:comment "Resulta da posição em que é colocada a lasca ou lamina para ser retocada. Usar o vocabulário controlado AH-ChippingDirection."@pt;
+	rdfs:label "Arrowhead-Chipping-direction"@en;
+        rdfs:domain ah:Chipping;
+	rdfs:range xsd:anyURI.
+
+ah:chippingOrientation
+  	a rdf:Property,	owl:DataProperty;
+  	rdfs:comment "Angle between the original axis of the part and the line formed by the retouching, Lateral=True;Transverse=False."@en;
+    	rdfs:comment "Ângulo entre o eixo primitivo da peça e a linha formada pelo retoque, Lateral=True;Transversal=False."@pt;
+  	rdfs:label "Arrowhead-Chipping-Orientation"@en;
+ 	rdfs:domain ah:Chipping;
+  	rdfs:range xsd:boolean.
+
+ah:chippingDelineation
+	a rdf:Property,	owl:DataProperty;
+	rdfs:comment "The retouching gives the margins a shape.. A good pratice is to use the Controlled Vocabulary AH-ChippingDelineation."@en;
+ 	rdfs:comment "Ângulo entre o eixo primitivo da peça e a linha formada pelo retoque. Usar o vocabulário controlado AH-ChippingDelineation."@pt;
+	rdfs:label "Arrowhead-Chipping-delineation"@en;
+  	rdfs:domain ah:Chipping;
+	rdfs:range xsd:anyURI.
+
+ah:chippingShape
+	a rdf:Property,	owl:DataProperty;
+	rdfs:comment "Line defined by the edge. A good pratice is to use the Controlled Vocabulary AH-ChippingShape."@en;
+	rdfs:comment "Linha definida pelo bordo. Usar o vocabulário controlado AH-ChippingShape."@pt;
+	rdfs:label "Arrowhead-Chipping-shape"@en;
+  	rdfs:domain ah:Chipping;
+	rdfs:range xsd:anyURI.
+
+ah:chippingLocationSide
+	a rdf:Property,	owl:DataProperty;
+	rdfs:comment "The retouching can occupy a position to the left or right of the axis of symmetry and, depending on the axis perpendicular to it, the retouching can be distal, medial or proximal. . A good pratice is to use the COntrolled Vocabulary AH-ChippingLocation."@en;
+  	rdfs:comment "Ângulo entre o eixo primitivo da peça e a linha formada pelo retoque. Usar o vocabulário controlado AH-ChippingLocation."@pt;
+	rdfs:label "Arrowhead-Chipping Location-lateral"@en;
+	rdfs:domain ah:Chipping;
+	rdfs:range xsd:anyURI.
+
+ah:chippingLocationTransversal
+  	a rdf:Property,	owl:DataProperty;
+  	rdfs:comment "The retouching can be distal or proximal and, depending on the edge where it is located, it can occupy a left, right or median position. A good pratice is to use the COntrolled Vocabulary AH-ChippingLocation."@en;
+	rdfs:comment "O retoque pode ser distal ou próximal e em função do bordo onde se situa, pode ocupar uma posição à esquerda, à direita, ou mediana. Usar o vocabulário controlado AH-ChippingLocation."@pt;
+  	rdfs:label "Arrowhead-Chipping Location-Transversal"@en;
+	rdfs:domain ah:Chipping;
+  	rdfs:range xsd:anyURI .
+
+
+
+#>---------------------------------------------------------<#
+#>      THE END END END END END END END END END            <#
+#>---------------------------------------------------------<#

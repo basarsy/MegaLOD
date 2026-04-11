@@ -1,0 +1,41 @@
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix dc: <http://purl.org/dc/terms/> .
+
+<https://purl.org/megalod/kos/ah-chippingMode> a skos:ConceptScheme, prov:Entity ;
+    skos:prefLabel "Arrowhead chipping mode"@en;
+    skos:hasTopConcept <https://purl.org/megalod/kos/ah-chippingMode/plane>,
+        <https://purl.org/megalod/kos/ah-chippingMode/parallel>,
+        <https://purl.org/megalod/kos/ah-chippingMode/sub-parallel>;
+    dc:creator "Mariana Curado Malta(INESC TEC, Faculdade de Engenharia, Universidade do Porto, Portugal)" ;
+    dc:creator "María Luisa Díez Platas, (UNIR, Spain)" ;
+    dc:contributor "Américo Araújo (Universidade de Coimbra, Portugal) ";
+    dc:contributor "João Muralha (CHAM, Faculdade de Ciências Sociais e Humanas, Universidade Nova de Lisboa, Portugal)";
+    dc:date "2024-04-25"^^xsd:date ;
+    dc:title "Kos about arrowhead chipping mode"@en.
+
+
+<https://purl.org/megalod/kos/ah-chippingMode/plane> a skos:Concept ;
+    skos:prefLabel "Plane"@en ;
+    skos:prefLabel "Plano"@pt ;
+ 
+    skos:inScheme <https://purl.org/megalod/kos/ah-chippingMode> ;
+    skos:topConceptOf <https://purl.org/megalod/kos/ah-chippingMode> .
+
+<https://purl.org/megalod/kos/ah-chippingMode/parallel> a skos:Concept ;
+    skos:prefLabel "Parallel"@en ;
+    skos:prefLabel "Paralelo"@pt ;
+    skos:notation "parallel" ;
+    skos:inScheme <https://purl.org/megalod/kos/ah-chippingMode> ;
+    skos:topConceptOf <https://purl.org/megalod/kos/ah-chippingMode>.
+
+<https://purl.org/megalod/kos/ah-chippingMode/sub-parallel> a skos:Concept ;
+    skos:prefLabel "Sub-Parallel"@en ;
+    skos:prefLabel "Sub-Paralelo"@pt ;
+    skos:notation "sub-parallel" ;
+    skos:inScheme <https://purl.org/megalod/kos/ah-chippingMode> ;
+    skos:topConceptOf <https://purl.org/megalod/kos/ah-chippingMode>.

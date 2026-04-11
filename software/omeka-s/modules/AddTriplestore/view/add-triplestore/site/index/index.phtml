@@ -1,0 +1,533 @@
+<?php
+$translate = $this->plugin('translate');
+$escape = $this->plugin('escapeHtml');
+$this->headLink()->appendStylesheet($this->assetUrl('css/addTriplestore.css', 'AddTriplestore') . '?v=' . time());
+$isLoggedIn = isset($isLoggedIn) ? $isLoggedIn : false;
+?>
+
+
+
+<div class="add-triplestore">
+    <div class="header-section">
+        <h1>Archaeological Data Management</h1>
+        <p>Upload and manage archaeological excavations and artifacts</p>
+    </div>
+
+    <?php if (!$isLoggedIn): ?>
+        <div class="login-required-section">
+            <div class="alert alert-info">
+                <h3>🔒 Login Required</h3>
+                <p>You must be logged in to add excavations and artifacts. You can still search and view existing data.</p>
+                <div class="button-group">
+                    <a href="<?php echo $this->url('site/add-triplestore/login', ['site-slug' => $this->currentSite()->slug()]); ?>" class="btn-primary">Login</a>
+                    <a href="<?php echo $this->url('site/add-triplestore/signup', ['site-slug' => $this->currentSite()->slug()]); ?>" class="btn-secondary">Sign Up</a>
+                    <a href="<?php echo $this->url('site/add-triplestore/search', ['site-slug' => $this->currentSite()->slug()]); ?>" class="btn-secondary">Search Data</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="public-actions">
+            <div class="action-card">
+                <div class="card-icon">🔍</div>
+                <h3>Search Data</h3>
+                <p>Find and explore existing archaeological data</p>
+                <a href="<?php echo $this->url('site/add-triplestore/search', ['site-slug' => $this->currentSite()->slug()]); ?>" class="btn-primary">Search Now</a>
+            </div>
+        </div>
+    <?php else: ?>
+        <div class="user-menu">
+            <div class="user-info">
+                <span class="welcome-text">Welcome, <?php echo $this->escapeHtml($this->identity()->getName()); ?>!</span>
+                <a href="<?php echo $this->url('site/add-triplestore/logout', ['site-slug' => $this->currentSite()->slug()]); ?>" class="logout-link">Logout</a>
+            </div>
+        </div>
+        <?php if (!empty($result) && strpos($result, 'successfully') !== false): ?>
+            <div class="success-message">
+                <strong><?php echo $this->escapeHtml($result); ?></strong>
+            </div>
+            
+            <?php if (isset($excavationItemSetId) && $excavationItemSetId): ?>
+                <div id="arrowhead-upload-section">
+                    <p>Excavation uploaded successfully! Would you like to upload arrowheads to this excavation?</p>
+                    <div class="button-group">
+                        <button id="upload-arrowhead-btn" class="button">Upload Arrowheads</button>
+                        <button id="exit-upload-btn" class="button">Exit</button>
+                    </div>
+                    
+                    <div id="upload-form-container" style="display: none; margin-top: 20px;">
+                        <h3>Upload Arrowhead</h3>
+                        <form action="<?php echo $this->url('site/add-triplestore/upload', ['site-slug' => $site->slug()], true); ?>" method="post" enctype="multipart/form-data">
+                            <div>
+                                <label for="file">Select arrowhead file to upload:</label>
+                                <input type="file" name="file" id="file" required>
+                            </div>
+                            <div>
+                                <input type="hidden" name="upload_type" value="arrowhead">
+                                <input type="hidden" name="item_set_id" value="<?php echo $excavationItemSetId; ?>">
+                                <input type="hidden" name="continuous_upload" value="1">
+                            </div>
+                            <div>
+                                <input type="submit" value="Upload" name="submit">
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            <?php elseif ($this->params()->fromPost('continuous_upload') || $this->params()->fromQuery('continuous_upload')): ?>
+                <?php 
+                $itemSetId = $this->params()->fromPost('item_set_id') ?: $this->params()->fromQuery('item_set_id');
+                ?>
+                
+                <div id="continue-upload-section">
+                    <p>Arrowhead uploaded successfully! Would you like to upload another arrowhead?</p>
+                    <div class="button-group">
+                        <button id="upload-another-btn" class="button">Upload Another</button>
+                        <button id="exit-upload-btn" class="button">Exit</button>
+                    </div>
+                    
+                    <div id="upload-form-container" style="display: none; margin-top: 20px;">
+                        <h3>Upload Another Arrowhead</h3>
+                        <form action="<?php echo $this->url('site/add-triplestore/upload', ['site-slug' => $site->slug()], true); ?>" method="post" enctype="multipart/form-data">
+                            <div>
+                                <label for="file">Select arrowhead file to upload:</label>
+                                <input type="file" name="file" id="file" required>
+                            </div>
+                            <div>
+                                <input type="hidden" name="upload_type" value="arrowhead">
+                                <input type="hidden" name="item_set_id" value="<?php echo $itemSetId; ?>">
+                                <input type="hidden" name="continuous_upload" value="1">
+                            </div>
+                            <div>
+                                <input type="submit" value="Upload" name="submit">
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            <?php endif; ?>
+            
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    var uploadArrowheadBtn = document.getElementById('upload-arrowhead-btn');
+                    var uploadAnotherBtn = document.getElementById('upload-another-btn');
+                    var exitUploadBtn = document.getElementById('exit-upload-btn');
+                    var uploadFormContainer = document.getElementById('upload-form-container');
+                    
+                    if (uploadArrowheadBtn) {
+                        uploadArrowheadBtn.addEventListener('click', function() {
+                            uploadFormContainer.style.display = 'block';
+                        });
+                    }
+                    
+                    if (uploadAnotherBtn) {
+                        uploadAnotherBtn.addEventListener('click', function() {
+                            uploadFormContainer.style.display = 'block';
+                        });
+                    }
+                    
+                    if (exitUploadBtn) {
+                        exitUploadBtn.addEventListener('click', function() {
+                            window.location.href = '<?php echo $this->url('site', ['site-slug' => $site->slug()], true); ?>';
+                        });
+                    }
+                });
+            </script>
+        <?php else: ?>
+            <div class="main-actions">
+                <div class="action-card">
+                    <div class="card-icon">⛏️</div>
+                    <h3>Add Excavation</h3>
+                    <p>Create a new archaeological excavation site</p>
+                    <button type="button" class="btn-primary" onclick="showUploadOptions('excavation')">Get Started</button>
+                </div>
+
+                <!--<div class="action-card">
+                    <div class="card-icon">🏹</div>
+                    <h3>Add Artifacts</h3>
+                    <p>Upload arrowheads and other archaeological finds</p>
+                    <button type="button" class="btn-primary" onclick="showUploadOptions('arrowhead')">Add Artifact</button>
+                </div>-->
+
+                <div class="action-card">
+                    <div class="card-icon">🔍</div>
+                    <h3>Search Data</h3>
+                    <p>Find and explore existing archaeological data</p>
+                    <a href="<?php echo $this->url('site/add-triplestore/search', ['site-slug' => $this->currentSite()->slug()]); ?>" class="btn-primary">Search Now</a>
+                </div>
+            </div>
+
+            <div id="upload-options" style="display: none;" class="upload-options">
+                <h2>Choose Upload Method</h2>
+                <div class="method-buttons">
+                    <button type="button" class="method-btn" onclick="showUploadForm('upload')">Upload File</button>
+                    <button type="button" class="method-btn" onclick="showUploadForm('form')">Use Form</button>
+                </div>
+            </div>
+
+            <div id="upload-form" style="display: none;" class="upload-form-section">
+                <h2>Upload Data</h2>
+                <form action="<?php echo $this->url('site/add-triplestore/upload', ['site-slug' => $site->slug()], true); ?>" method="post" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label for="file">Select file to upload:</label>
+                        <input type="file" name="file" id="file" class="form-control">
+                    </div>
+                    <div>
+                        <input type="hidden" name="upload_type" id="upload_type" value="">
+                    </div>
+                    <div class="form-actions">
+                        <input type="submit" value="Upload" name="submit" class="btn-primary">
+                        <a href="<?php echo $this->url('site/add-triplestore/download-template', ['site-slug' => $site->slug()], ['query' => ['template' => 'arrowhead', 'format' => 'ttl']]); ?>" class="btn-secondary" style="margin-left:10px;">Download Arrowhead TTL</a>
+                        <a href="<?php echo $this->url('site/add-triplestore/download-template', ['site-slug' => $site->slug()], ['query' => ['template' => 'arrowhead', 'format' => 'xml']]); ?>" class="btn-secondary" style="margin-left:10px;">Download Arrowhead XML</a>
+                        <a href="<?php echo $this->url('site/add-triplestore/download-template', ['site-slug' => $site->slug()], ['query' => ['template' => 'excavation', 'format' => 'ttl']]); ?>" class="btn-secondary" style="margin-left:10px;">Download Excavation TTL</a>
+                        <a href="<?php echo $this->url('site/add-triplestore/download-template', ['site-slug' => $site->slug()], ['query' => ['template' => 'excavation', 'format' => 'xml']]); ?>" class="btn-secondary" style="margin-left:10px;">Download Excavation XML</a>
+                    </div>
+                </form>
+            </div>
+
+            <div id="remote-form" style="display: none;" class="remote-form-section">
+                <h2 id="form-title">Use Collection Form</h2>
+                <p>Please proceed with the form:</p>
+                <div class="form-buttons">
+                    <button type="button" id="arrowhead-form-btn" class="form-btn" onclick="redirectToForm('arrowhead', <?php echo 1; ?>)">Arrowhead Form</button>
+                    <button type="button" id="excavation-form-btn" class="form-btn" onclick="redirectToForm('excavation', <?php echo 2; ?>)">Excavation Form</button>
+                </div>
+            </div>
+            
+            <script>
+                function showUploadOptions(option) {
+                    document.getElementById('upload-options').style.display = 'block';
+                    document.getElementById('upload_type').value = option;
+                    
+                    document.getElementById('upload-options').setAttribute('data-type', option);
+                    
+                    document.querySelector('.main-actions').style.display = 'none';
+                }
+
+                function showUploadForm(method) {
+                    document.getElementById('upload-options').style.display = 'none';
+                    if (method === 'upload') {
+                        document.getElementById('upload-form').style.display = 'block';
+                        document.getElementById('remote-form').style.display = 'none';
+                    } else if (method === 'form') {
+                        const selectedType = document.getElementById('upload-options').getAttribute('data-type');
+                        if (selectedType === 'excavation') {
+                            redirectToForm('excavation', 2);
+                        } else if (selectedType === 'arrowhead') {
+                            redirectToForm('arrowhead', 1);
+                        }
+                    }
+                }
+
+                function redirectToForm(formType, formId) {
+                    if (formType === 'arrowhead') {
+                        window.location.href = '<?php echo $this->url('site/collecting', ['form-id' => 1, 'action' => 'uploadArrowheadForm'], true); ?>';
+                    } else if (formType === 'excavation') {
+                        window.location.href = '<?php echo $this->url('site/collecting', ['form-id' => 2, 'action' => 'uploadExcavationForm'], true); ?>';
+                    }
+                }
+            </script>
+        <?php endif; ?>
+    <?php endif; ?>
+</div>
+
+<style>
+.login-required-section {
+    max-width: 600px;
+    margin: 40px auto;
+}
+
+.alert {
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.alert-info {
+    background-color: #e3f2fd;
+    border: 1px solid #2196f3;
+    color: #1976d2;
+}
+
+.public-actions {
+    display: flex;
+    justify-content: center;
+    margin-top: 40px;
+}
+
+.public-actions .action-card {
+    max-width: 300px;
+}
+
+.btn-secondary {
+    display: inline-block;
+    background: #2196F3;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: background 0.2s ease;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+}
+
+.btn-secondary:hover {
+    background: #1976D2;
+}
+
+
+.nav-link {
+    display: inline-block;
+    padding: 8px 15px;
+    background-color: #f5f5f5;
+    border-radius: 4px;
+    text-decoration: none;
+    color: #333;
+}
+
+.nav-link:hover {
+    background-color: #e0e0e0;
+}
+
+.add-triplestore {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.header-section {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.header-section h1 {
+    font-size: 2.5rem;
+    color: #333;
+    margin-bottom: 15px;
+    font-weight: 300;
+}
+
+.header-section p {
+    font-size: 1.1rem;
+    color: #666;
+    margin: 0;
+}
+
+.main-actions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 30px;
+    margin-top: 40px;
+}
+
+.action-card {
+    background: white;
+    border-radius: 12px;
+    padding: 40px 30px;
+    text-align: center;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border: 1px solid #f0f0f0;
+}
+
+.action-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+}
+
+.card-icon {
+    font-size: 4rem;
+    margin-bottom: 20px;
+}
+
+.action-card h3 {
+    font-size: 1.4rem;
+    color: #333;
+    margin-bottom: 15px;
+    font-weight: 500;
+}
+
+.action-card p {
+    color: #666;
+    margin-bottom: 25px;
+    line-height: 1.5;
+}
+
+.btn-primary {
+    display: inline-block;
+    background: #4CAF50;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: background 0.2s ease;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+}
+
+.btn-primary:hover {
+    background: #45a049;
+}
+
+.upload-options, .upload-form-section, .remote-form-section {
+    background: white;
+    border-radius: 12px;
+    padding: 30px;
+    margin-top: 30px;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+    border: 1px solid #f0f0f0;
+}
+
+.upload-options h2, .upload-form-section h2, .remote-form-section h2 {
+    color: #333;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.method-buttons, .form-buttons {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+}
+
+.method-btn, .form-btn {
+    background: #f8f9fa;
+    border: 2px solid #dee2e6;
+    padding: 15px 25px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 1rem;
+}
+
+.method-btn:hover, .form-btn:hover {
+    background: #4CAF50;
+    color: white;
+    border-color: #4CAF50;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-control {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+}
+
+.form-actions {
+    text-align: center;
+    margin-top: 20px;
+
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+}
+
+.success-message {
+    background-color: #dff0d8;
+    color: #3c763d;
+    border: 1px solid #d6e9c6;
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 4px;
+    text-align: center;
+}
+
+.button-group {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin: 20px 0;
+}
+
+.button {
+    background: #4CAF50;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+}
+
+.button:hover {
+    background: #45a049;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .add-triplestore {
+        padding: 15px;
+    }
+    
+    .header-section h1 {
+        font-size: 2rem;
+    }
+    
+    .main-actions {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .action-card {
+        padding: 30px 20px;
+    }
+    
+    .method-buttons, .form-buttons {
+        flex-direction: column;
+    }
+    
+    .button-group {
+        flex-direction: column;
+    }
+}
+
+.user-menu {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.user-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.welcome-text {
+    color: #333;
+    font-weight: 500;
+}
+
+.logout-link {
+    color: #dc3545;
+    text-decoration: none;
+    font-size: 14px;
+    padding: 5px 10px;
+    border: 1px solid #dc3545;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.logout-link:hover {
+    background: #dc3545;
+    color: white;
+    text-decoration: none;
+}
+
+@media (max-width: 768px) {
+    .user-info {
+        flex-direction: column;
+        gap: 10px;
+    }
+}
+</style>

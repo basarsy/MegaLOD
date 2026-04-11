@@ -1,0 +1,49 @@
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix dc: <http://purl.org/dc/terms/> .
+
+<https://purl.org/megalod/kos/ah-chippingShape> a skos:ConceptScheme, prov:Entity ;
+    skos:prefLabel "Arrowhead chipping shape"@en;
+    skos:hasTopConcept <https://purl.org/megalod/kos/ah-chippingShape/straight>,
+        <https://purl.org/megalod/kos/ah-chippingShape/convex>,
+        <https://purl.org/megalod/kos/ah-chippingShape/concave>,
+        <https://purl.org/megalod/kos/ah-chippingShape/sinuous>;
+    dc:creator "Mariana Curado Malta(INESC TEC, Faculdade de Engenharia, Universidade do Porto, Portugal)" ;
+    dc:creator "María Luisa Díez Platas, (UNIR, Spain)" ;
+    dc:contributor "Américo Araújo (Universidade de Coimbra, Portugal) ";
+    dc:contributor "João Muralha (CHAM, Faculdade de Ciências Sociais e Humanas, Universidade Nova de Lisboa, Portugal)";
+    dc:date "2024-04-25"^^xsd:date ;
+    dc:title "Kos about arrowhead chipping shape"@en.
+
+
+<https://purl.org/megalod/kos/ah-chippingShape/straight> a skos:Concept ;
+    skos:prefLabel "Straight"@en ;
+    skos:prefLabel "Reto"@pt ;
+    skos:notation "straight" ;
+    skos:inScheme <https://purl.org/megalod/kos/ah-chippingShape> ;
+    skos:topConceptOf <https://purl.org/megalod/kos/ah-chippingShape> .
+
+<https://purl.org/megalod/kos/ah-chippingShape/convex> a skos:Concept ;
+    skos:prefLabel "Convex"@en ;
+    skos:prefLabel "Convexo"@pt ;
+    skos:notation "convex" ;
+    skos:inScheme <https://purl.org/megalod/kos/ah-chippingShape> ;
+    skos:topConceptOf <https://purl.org/megalod/kos/ah-chippingShape> .
+
+<https://purl.org/megalod/kos/ah-chippingShape/concave> a skos:Concept ;
+    skos:prefLabel "Concave"@en ;
+    skos:prefLabel "Côncavo"@pt ;
+    skos:notation "concave" ;
+    skos:inScheme <https://purl.org/megalod/kos/ah-chippingShape> ;
+    skos:topConceptOf <https://purl.org/megalod/kos/ah-chippingShape> .
+
+<https://purl.org/megalod/kos/ah-chippingShape/sinuous> a skos:Concept ;
+    skos:prefLabel "Sinuous"@en ;
+    skos:prefLabel "Sinuouso"@pt ;
+    skos:notation "sinuous" ;
+    skos:inScheme <https://purl.org/megalod/kos/ah-chippingShape>;
+    skos:topConceptOf <https://purl.org/megalod/kos/ah-chippingShape>  .

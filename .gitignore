@@ -1,0 +1,54 @@
+# ============================================================
+# MegaLOD Root .gitignore
+# ============================================================
+
+# === Secrets and environment ===
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa
+id_ed25519
+
+# === Local application config (environment-specific) ===
+**/config/local.config.php
+**/config/database.ini
+**/graphdb.config.php
+
+# === Runtime and generated data ===
+logs/
+*.log
+tmp/
+temp/
+cache/
+files/
+uploads/
+exports/
+*.sql
+*.sqlite
+*.sqlite3
+*.dump
+*.bak
+
+# === OS and IDE noise ===
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# === Package manager artifacts ===
+vendor/
+!**/asset/vendor/
+node_modules/
+composer.phar
+
+# === Build artifacts ===
+build/
+.sass-cache
+.php_cs.cache

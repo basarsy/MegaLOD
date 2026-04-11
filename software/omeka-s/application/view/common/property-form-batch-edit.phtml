@@ -1,0 +1,164 @@
+<?php
+$translate = $this->plugin('translate');
+$escape = $this->plugin('escapeHtml');
+
+$selectProperty = $this->propertySelect([
+    'name' => 'value[__INDEX__][property_id]',
+    'options' => [
+        'empty_option' => '',
+    ],
+    'attributes' => [
+        'class' => 'property-select',
+        'data-placeholder' => $translate('Select property'),
+    ],
+]);
+$templateLiteral = '
+<div class="field">
+    <div class="field-meta">
+        <label>' . $translate('Add text value') . '</label>
+    </div>
+    <div class="inputs">
+        ' . $selectProperty . '
+        <textarea name="value[__INDEX__][value]"></textarea>
+        <label><input type="radio" name="value[__INDEX__][is_public]" value="1" checked> ' . $translate('Public') . '</label>
+        <label><input type="radio" name="value[__INDEX__][is_public]" value="0"> ' . $translate('Not public') . '</label><br>
+        <input type="hidden" name="value[__INDEX__][type]" value="literal">
+        <button type="button" class="remove-value">' . $translate('Remove') . '</button>
+    </div>
+</div>';
+$templateResource = '
+<div class="field">
+    <div class="field-meta">
+        <label>' . $translate('Add resource value') . '</label>
+    </div>
+    <div class="inputs">
+        ' . $selectProperty . '
+        <input type="text" name="value[__INDEX__][value_resource_id]" placeholder="' . $this->escapeHtml($translate('Resource ID')) . '">
+        <label><input type="radio" name="value[__INDEX__][is_public]" value="1" checked> ' . $translate('Public') . '</label>
+        <label><input type="radio" name="value[__INDEX__][is_public]" value="0"> ' . $translate('Not public') . '</label><br>
+        <input type="hidden" name="value[__INDEX__][type]" value="resource">
+        <button type="button" class="remove-value">' . $translate('Remove') . '</button>
+    </div>
+</div>';
+$templateUri = '
+<div class="field">
+    <div class="field-meta">
+        <label>' . $translate('Add URI value') . '</label>
+    </div>
+    <div class="inputs">
+        ' . $selectProperty . '
+        <input type="text" name="value[__INDEX__][id]" placeholder="' . $this->escapeHtml($translate('URI')) . '">
+        <input type="text" name="value[__INDEX__][label]" placeholder="' . $this->escapeHtml($translate('Label')) . '">
+        <label><input type="radio" name="value[__INDEX__][is_public]" value="1" checked> ' . $translate('Public') . '</label>
+        <label><input type="radio" name="value[__INDEX__][is_public]" value="0"> ' . $translate('Not public') . '</label><br>
+        <input type="hidden" name="value[__INDEX__][type]" value="uri">
+        <button type="button" class="remove-convert-data-type">' . $translate('Remove') . '</button>
+    </div>
+</div>';
+
+$convertDataTypePropertySelect = $this->propertySelect([
+    'name' => 'convert_data_types[__INDEX__][convert_property_id]',
+    'options' => [
+        'empty_option' => '',
+    ],
+    'attributes' => [
+        'class' => 'property-id-select chosen-select',
+        'data-placeholder' => $translate('Select property'),
+    ],
+]);
+$convertDataTypeDataTypeSelect = $this->dataType()->getSelect(
+    'convert_data_types[__INDEX__][convert_data_type_target]',
+    null,
+    [
+        'class' => 'data-type-target-select chosen-select',
+        'data-placeholder' => $translate('Select data type'),
+    ],
+    ['is_conversion_target' => true]
+);
+$convertDataTypeTemplate = '
+<div class="field">
+    <div class="field-meta">
+        <label>' . $translate('Convert data type') . '</label>
+    </div>
+    <div class="inputs">
+        ' . $convertDataTypePropertySelect . '
+        ' . $convertDataTypeDataTypeSelect . '
+        <button type="button" class="remove-convert-data-type">' . $translate('Remove') . '</button>
+    </div>
+</div>';
+?>
+<fieldset>
+<legend><?php echo $translate('Values'); ?></legend>
+<div class="field">
+    <div class="field-meta">
+        <label>Set value visibility</label>
+    </div>
+    <div class="inputs">
+        <?php echo $this->propertySelect([
+            'name' => 'set_value_visibility[property_id]',
+            'attributes' => [
+                'class' => 'chosen-select',
+                'multiple' => true,
+                'data-placeholder' => 'Select properties', // @translate
+            ],
+        ]); ?>
+        <label><input type="radio" name="set_value_visibility[is_public]" value="1"> <?php echo $translate('Public'); ?></label>
+        <label><input type="radio" name="set_value_visibility[is_public]" value="0"> <?php echo $translate('Not public'); ?></label>
+    </div>
+</div>
+<div id="convert-data-types"
+    data-template="<?php echo $this->escapeHtml($convertDataTypeTemplate); ?>"
+>
+    <div class="field-container"></div>
+    <button type="button" class="add-convert-data-type"><?php echo $this->translate('Convert data type'); ?></button>
+</div>
+<div id="values"
+    data-template-literal="<?php echo $this->escapeHtml($templateLiteral); ?>"
+    data-template-resource="<?php echo $this->escapeHtml($templateResource); ?>"
+    data-template-uri="<?php echo $this->escapeHtml($templateUri); ?>"
+>
+    <div class="field-container"></div>
+    <button type="button" class="value-add-button" data-type="literal"><?php echo $translate('Add text value'); ?></button>
+    <button type="button" class="value-add-button" data-type="resource"><?php echo $translate('Add resource value'); ?></button>
+    <button type="button" class="value-add-button" data-type="uri"><?php echo $translate('Add URI value'); ?></button>
+</div>
+</fieldset>
+<script>
+$(document).ready(function() {
+    let index = 0;
+    const chosenOptions = {allow_single_deselect: true};
+
+    // Add a convert data type field.
+    $('.add-convert-data-type').on('click', function(e) {
+        const container = $('#convert-data-types');
+        const template = container.data('template');
+        container.children('.field-container').append($.parseHTML(template.replace(/__INDEX__/g, index++)));
+        container.find('.property-id-select').chosen(chosenOptions);
+        container.find('.data-type-target-select').chosen(chosenOptions);
+    });
+    $(document).on('click', '.remove-convert-data-type', function(e) {
+        $(this).closest('.field').remove();
+    });
+
+    // Add a value field.
+    $('.value-add-button').on('click', function(e) {
+        const container = $('#values');
+        switch ($(this).data('type')) {
+            case 'resource':
+                template = container.data('template-resource');
+                break;
+            case 'uri':
+                template = container.data('template-uri');
+                break;
+            case 'literal':
+            default:
+                template = container.data('template-literal');
+        }
+        container.children('.field-container').append($.parseHTML(template.replace(/__INDEX__/g, index++)));
+        container.find('.property-select').chosen(chosenOptions);
+    });
+    $(document).on('click', '.field-container .remove-value', function(e) {
+        $(this).closest('.field').remove();
+    });
+});
+</script>
