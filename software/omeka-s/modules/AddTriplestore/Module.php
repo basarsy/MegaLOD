@@ -8,6 +8,7 @@ use Laminas\Mvc\MvcEvent;
 use Laminas\ServiceManager\ServiceLocatorInterface;
 use Laminas\Http\Client;
 use Omeka\Module\AbstractModule;
+use Omeka\Permissions\Assertion\IsSelfAssertion;
 
 class Module extends AbstractModule
 {
@@ -38,38 +39,66 @@ public function onBootstrap(MvcEvent $event)
 
 
     if (!$acl->hasRole('guest')) {
-        $acl->addRole('guest', 'researcher');
+        $acl->addRole('guest');
         $acl->addRoleLabel('guest', 'Site Visitor');
     }
     
 
     $acl->allow(
-    null,
-    ['AddTriplestore\Controller\Site\Index'],
-    ['index', 'search', 'viewDetails', 'processCollectingForm', 'downloadTtl', 'aboutUs', 'upload', 'login', 'signup', 'logout', 'dashboard', 'myData', 'processFileUpload', 'uploadTtlData', 'downloadTemplate', 'sparql']
-);
-    
+        null,
+        ['AddTriplestore\Controller\Site\Index'],
+        ['index', 'search', 'viewDetails', 'downloadTtl', 'aboutUs',
+         'login', 'signup', 'downloadTemplate', 'sparql']
+    );
+
+    $acl->allow(
+        'guest',
+        ['AddTriplestore\Controller\Site\Index'],
+        ['upload', 'processCollectingForm', 'dashboard', 'myData', 'logout']
+    );
 
     $acl->allow('guest', [
         'Omeka\Entity\Item',
-        'Omeka\Entity\ItemSet', 
+        'Omeka\Entity\ItemSet',
         'Omeka\Entity\Media',
         'Omeka\Api\Adapter\ItemAdapter',
         'Omeka\Api\Adapter\ItemSetAdapter',
-        'Omeka\Api\Adapter\MediaAdapter'
-    ], ['create', 'update', 'delete', 'read']); 
-    
-
-    $acl->allow('guest', [
-        'Omeka\Controller\Api',
-    ], ['create', 'update', 'delete', 'read']); 
+        'Omeka\Api\Adapter\MediaAdapter',
+    ], ['read', 'create']);
 
     $acl->allow('guest', [
         'Omeka\Entity\ResourceClass',
         'Omeka\Entity\ResourceTemplate',
         'Omeka\Api\Adapter\ResourceClassAdapter',
-        'Omeka\Api\Adapter\ResourceTemplateAdapter'
+        'Omeka\Api\Adapter\ResourceTemplateAdapter',
     ], ['read']);
+
+    $acl->allow('guest', 'Omeka\Entity\User',
+        ['read', 'update', 'change-password'],
+        new IsSelfAssertion
+    );
+    $acl->allow('guest', 'Omeka\Api\Adapter\UserAdapter',
+        ['read', 'update'],
+        new IsSelfAssertion
+    );
+
+    $acl->deny('guest', [
+        'Omeka\Controller\Admin\Index',
+        'Omeka\Controller\Admin\Item',
+        'Omeka\Controller\Admin\ItemSet',
+        'Omeka\Controller\Admin\Media',
+        'Omeka\Controller\Admin\User',
+        'Omeka\Controller\Admin\Vocabulary',
+        'Omeka\Controller\Admin\ResourceTemplate',
+        'Omeka\Controller\Admin\ResourceClass',
+        'Omeka\Controller\Admin\Property',
+        'Omeka\Controller\Admin\SystemInfo',
+        'Omeka\Controller\Admin\Query',
+        'Omeka\Controller\Admin\Columns',
+        'Omeka\Controller\Admin\Asset',
+        'Omeka\Controller\Admin\Module',
+        'Omeka\Controller\Admin\Setting',
+    ]);
 }
 
 
@@ -196,6 +225,24 @@ public function redirectGuestsFromAdmin(MvcEvent $event)
             [$this, 'handleItemDeletion']
         );
         
+        $sharedEventManager->attach(
+            'Omeka\Api\Adapter\ItemAdapter',
+            'api.create.pre',
+            [$this, 'allowGuestUserCreateItems']
+        );
+
+        $sharedEventManager->attach(
+            'Omeka\Api\Adapter\ItemSetAdapter',
+            'api.create.pre',
+            [$this, 'allowGuestUserCreateItemSets']
+        );
+
+        $sharedEventManager->attach(
+            'Omeka\Api\Adapter\MediaAdapter',
+            'api.create.pre',
+            [$this, 'allowGuestUserCreateItems']
+        );
+
         $sharedEventManager->attach(
             'Omeka\Api\Adapter\ItemAdapter',
             'api.create.post',

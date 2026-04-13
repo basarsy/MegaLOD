@@ -13,6 +13,7 @@ use EasyRdf\Graph;
 use Laminas\Form\FormInterface;
 use Laminas\Router\RouteStackInterface;
 use Laminas\Session\Container;
+use Laminas\Validator\Csrf as CsrfValidator;
 
 class IndexController extends AbstractActionController
 {
@@ -28,7 +29,9 @@ class IndexController extends AbstractActionController
 
     private $excavationIdentifier = "0"; // Default to the "0" graph
     
-    private $currentProcessingItemSetId = null; // Track current item set being processed
+    private $currentProcessingItemSetId = null;
+
+    private $csrfValidator = null;
         
 
     public function __construct(RouteStackInterface $router, Client $httpClient)
@@ -54,10 +57,11 @@ class IndexController extends AbstractActionController
     {
         $site = $this->currentSite();
         $isLoggedIn = (bool) $this->identity();
-        
+
         return new ViewModel([
             'site' => $site,
-            'isLoggedIn' => $isLoggedIn
+            'isLoggedIn' => $isLoggedIn,
+            'csrfToken' => $isLoggedIn ? $this->generateCsrfToken() : '',
         ]);
     }
 
@@ -73,17 +77,23 @@ class IndexController extends AbstractActionController
      */
     public function logoutAction()
     {
-        // Check if user is logged in
+        if (!$this->getRequest()->isPost()) {
+            return $this->redirect()->toRoute('site', ['site-slug' => $this->currentSite()->slug()]);
+        }
+
+        if (!$this->validateCsrfToken()) {
+            return $this->redirect()->toRoute('site', ['site-slug' => $this->currentSite()->slug()]);
+        }
+
         $auth = $this->getServiceLocator()->get('Omeka\AuthenticationService');
         $auth->clearIdentity();
-        
-        // Clear user session data
+
         $session = new Container('site_user');
         $session->getManager()->getStorage()->clear();
-        
+
         $sessionManager = Container::getDefaultManager();
         $sessionManager->destroy();
-        
+
         $this->messenger()->addSuccess('Successfully logged out');
         return $this->redirect()->toRoute('site', ['site-slug' => $this->currentSite()->slug()]);
     }
@@ -100,7 +110,6 @@ class IndexController extends AbstractActionController
      */
     public function signupAction()
     {
-        // If already logged in, redirect to main page
         if ($this->identity()) {
             return $this->redirect()->toRoute('site', ['site-slug' => $this->currentSite()->slug()]);
         }
@@ -108,11 +117,15 @@ class IndexController extends AbstractActionController
         $form = $this->getSignupForm();
         $view = new ViewModel([
             'form' => $form,
-            'site' => $this->currentSite()
+            'site' => $this->currentSite(),
+            'csrfToken' => $this->generateCsrfToken(),
         ]);
         $view->setTemplate('add-triplestore/site/index/signup');
-        
+
         if ($this->getRequest()->isPost()) {
+            if (!$this->validateCsrfToken()) {
+                return $view;
+            }
             $data = $this->params()->fromPost();
             $form->setData($data);
             
@@ -185,17 +198,7 @@ class IndexController extends AbstractActionController
         $view->setTemplate('add-triplestore/site/index/login');
         
         if ($this->getRequest()->isPost()) {
-
             $data = $this->params()->fromPost();
-            
-            //if csrf element exists in the form
-            $csrfElement = $form->get('loginform_csrf');
-            if ($csrfElement) {
-                if (!isset($data['loginform_csrf'])) {
-                    $data['loginform_csrf'] = $csrfElement->getValue();
-                }
-            }
-            
             $form->setData($data);
            
             if (!$form->isValid()) {
@@ -278,7 +281,8 @@ class IndexController extends AbstractActionController
             'user' => $user,
             'site' => $this->currentSite(),
             'isLoggedIn' => true,
-            'userRole' => $user->getRole()
+            'userRole' => $user->getRole(),
+            'csrfToken' => $this->generateCsrfToken(),
         ]);
         $view->setTemplate('add-triplestore/site/index/user-dashboard');
         
@@ -691,8 +695,14 @@ class IndexController extends AbstractActionController
     public function processCollectingFormAction()
     {
         $redirect = $this->requireLogin();
-        if ($redirect) 
+        if ($redirect)
             return $redirect;
+
+        if ($this->getRequest()->isPost() && !$this->validateCsrfToken()) {
+            return $this->redirect()->toRoute('site/add-triplestore/upload', [
+                'site-slug' => $this->currentSite()->slug(),
+            ]);
+        }
 
         $itemSetId = $this->params()->fromQuery('item_set_id');
         error_log("Processing collecting form for item set ID: $itemSetId", 3, OMEKA_PATH . '/logs/count-add-triplestore.log');
@@ -754,11 +764,16 @@ class IndexController extends AbstractActionController
 
     public function uploadAction()
     {
-        // Get POST data
         $redirect = $this->requireLogin();
         if ($redirect) return $redirect;
 
         $user = $this->identity();
+
+        if ($this->getRequest()->isPost() && !$this->validateCsrfToken()) {
+            return $this->redirect()->toRoute('site/add-triplestore/upload', [
+                'site-slug' => $this->currentSite()->slug(),
+            ]);
+        }
 
         $postData = $this->params()->fromPost();
 
@@ -798,7 +813,8 @@ class IndexController extends AbstractActionController
             $view = new ViewModel([
                 'itemSetId' => $itemSetId,
                 'uploadType' => $uploadType,
-                'result' => $this->params()->fromQuery('result')
+                'result' => $this->params()->fromQuery('result'),
+                'csrfToken' => $this->generateCsrfToken(),
             ]);
             $view->setTemplate('add-triplestore/site/index/upload-arrowhead');
             return $view;
@@ -838,7 +854,8 @@ class IndexController extends AbstractActionController
                     'itemSetId' => $itemSetId,
                     'uploadType' => $uploadType,
                     'result' => $this->params()->fromQuery('result', ''),
-                    'success' => $success
+                    'success' => $success,
+                    'csrfToken' => $this->generateCsrfToken(),
                 ]);
                 $view->setTemplate('add-triplestore/site/index/upload-arrowhead');
                 return $view;
@@ -1691,8 +1708,31 @@ class IndexController extends AbstractActionController
         return null;
     }
 
+    private function getCsrfValidator()
+    {
+        if (!$this->csrfValidator) {
+            $this->csrfValidator = new CsrfValidator([
+                'name' => 'add_triplestore_csrf',
+                'timeout' => 3600,
+            ]);
+        }
+        return $this->csrfValidator;
+    }
 
+    private function generateCsrfToken()
+    {
+        return $this->getCsrfValidator()->getHash();
+    }
 
+    private function validateCsrfToken()
+    {
+        $token = $this->params()->fromPost('csrf_token', '');
+        if (!$this->getCsrfValidator()->isValid($token)) {
+            $this->messenger()->addError('Invalid or expired form submission. Please try again.');
+            return false;
+        }
+        return true;
+    }
 
 
     /**

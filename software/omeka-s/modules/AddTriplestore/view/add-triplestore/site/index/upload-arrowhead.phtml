@@ -51,6 +51,7 @@
         </div>
 
         <form id="fileUploadForm" action="<?php echo $this->url('site/add-triplestore/upload', ['site-slug' => $this->currentSite()->slug()], true); ?>" method="post" enctype="multipart/form-data">
+            <input type="hidden" name="csrf_token" value="<?php echo $this->escapeHtml($csrfToken); ?>">
             <div class="form-group">
                 <label for="file">Select arrowhead file to upload (.ttl or .xml):</label>
                 <input type="file" name="file" id="file" required>
@@ -66,6 +67,7 @@
         </form>
 
         <form id="manualForm" action="<?php echo $this->url('site/add-triplestore/upload', ['site-slug' => $this->currentSite()->slug()], true); ?>" method="post" style="display: none;">
+            <input type="hidden" name="csrf_token" value="<?php echo $this->escapeHtml($csrfToken); ?>">
             <input type="hidden" name="upload_type" value="<?php echo $this->escapeHtml($uploadType); ?>">
             <input type="hidden" name="item_set_id" value="<?php echo $this->escapeHtml($itemSetId); ?>">
             <input type="hidden" name="mode" value="form">

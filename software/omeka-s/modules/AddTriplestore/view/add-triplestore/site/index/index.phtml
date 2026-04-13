@@ -38,7 +38,10 @@ $isLoggedIn = isset($isLoggedIn) ? $isLoggedIn : false;
         <div class="user-menu">
             <div class="user-info">
                 <span class="welcome-text">Welcome, <?php echo $this->escapeHtml($this->identity()->getName()); ?>!</span>
-                <a href="<?php echo $this->url('site/add-triplestore/logout', ['site-slug' => $this->currentSite()->slug()]); ?>" class="logout-link">Logout</a>
+                <form method="post" action="<?php echo $this->url('site/add-triplestore/logout', ['site-slug' => $this->currentSite()->slug()]); ?>" style="display:inline">
+                    <input type="hidden" name="csrf_token" value="<?php echo $this->escapeHtml($csrfToken); ?>">
+                    <button type="submit" class="logout-link">Logout</button>
+                </form>
             </div>
         </div>
         <?php if (!empty($result) && strpos($result, 'successfully') !== false): ?>
@@ -57,6 +60,7 @@ $isLoggedIn = isset($isLoggedIn) ? $isLoggedIn : false;
                     <div id="upload-form-container" style="display: none; margin-top: 20px;">
                         <h3>Upload Arrowhead</h3>
                         <form action="<?php echo $this->url('site/add-triplestore/upload', ['site-slug' => $site->slug()], true); ?>" method="post" enctype="multipart/form-data">
+                            <input type="hidden" name="csrf_token" value="<?php echo $this->escapeHtml($csrfToken); ?>">
                             <div>
                                 <label for="file">Select arrowhead file to upload:</label>
                                 <input type="file" name="file" id="file" required>
@@ -87,6 +91,7 @@ $isLoggedIn = isset($isLoggedIn) ? $isLoggedIn : false;
                     <div id="upload-form-container" style="display: none; margin-top: 20px;">
                         <h3>Upload Another Arrowhead</h3>
                         <form action="<?php echo $this->url('site/add-triplestore/upload', ['site-slug' => $site->slug()], true); ?>" method="post" enctype="multipart/form-data">
+                            <input type="hidden" name="csrf_token" value="<?php echo $this->escapeHtml($csrfToken); ?>">
                             <div>
                                 <label for="file">Select arrowhead file to upload:</label>
                                 <input type="file" name="file" id="file" required>
@@ -165,6 +170,7 @@ $isLoggedIn = isset($isLoggedIn) ? $isLoggedIn : false;
             <div id="upload-form" style="display: none;" class="upload-form-section">
                 <h2>Upload Data</h2>
                 <form action="<?php echo $this->url('site/add-triplestore/upload', ['site-slug' => $site->slug()], true); ?>" method="post" enctype="multipart/form-data">
+                    <input type="hidden" name="csrf_token" value="<?php echo $this->escapeHtml($csrfToken); ?>">
                     <div class="form-group">
                         <label for="file">Select file to upload:</label>
                         <input type="file" name="file" id="file" class="form-control">

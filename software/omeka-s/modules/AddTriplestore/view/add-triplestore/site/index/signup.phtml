@@ -22,7 +22,8 @@ $this->headTitle('Sign Up - ' . $site->title());
         <?php endif; ?>
 
         <?php echo $this->form()->openTag($form); ?>
-        
+        <input type="hidden" name="csrf_token" value="<?php echo $this->escapeHtml($csrfToken); ?>">
+
         <div class="form-group">
             <label for="name">Full Name</label>
             <input type="text" name="name" id="name" class="form-control" required 
