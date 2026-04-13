@@ -41,18 +41,18 @@ MegaLOD/
 
 ### Folder Ownership
 
-| Folder | Owner / Purpose | What belongs here | What never belongs here |
-|--------|----------------|-------------------|------------------------|
-| `metadata-schemes/` | Ontology team | OWL/RDFS class and property definitions (`.ttl`) | Application code, generated files |
-| `vocabularies/` | Ontology team | SKOS controlled vocabularies (`.ttl`) | Application code, generated files |
-| `software/` | Development team | Omeka S application, modules, themes | Ontology sources, raw data dumps |
-| `MAP.md` | Ontology team | Metadata Application Profile spec | — |
+| Folder | Owner |
+|--------|----------------|
+| `metadata-schemes/` | Ontology team |
+| `vocabularies/` | Ontology team |
+| `software/` | Development team |
+| `MAP.md` | Ontology team |
 
 ## Key Custom Module: AddTriplestore
 
 The `AddTriplestore` module connects Omeka S to a GraphDB triplestore, enabling SPARQL queries and RDF export of excavation and artefact data.
 
-**Setup:** Copy `graphdb.config.php.dist` to `graphdb.config.php` and fill in your GraphDB credentials. Never commit the live config file.
+**Setup:** Copy `graphdb.config.php.dist` to `graphdb.config.php` and fill in your GraphDB credentials.
 
 ```
 software/omeka-s/modules/AddTriplestore/config/
