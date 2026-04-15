@@ -298,15 +298,12 @@ class IndexController extends AbstractActionController
      */
     public function sparqlAction()
     {
-        $graphdbUrl = 'http://localhost:7200/'; // current GraphDB instance URL
-        
-        // send to GraphDB with read-only credentials
+        $graphdbUrl = getenv('GRAPHDB_WORKBENCH_URL') ?: 'http://localhost:7200/';
+
         $view = new ViewModel();
         $view->setVariable('graphdbUrl', $graphdbUrl);
-        $view->setVariable('username', 'read_only_user');
-        $view->setVariable('password', ''); // No password for read_only_user was created in the example
-        $view->setTemplate('add-triplestore/site/index/sparql-redirect');
-        
+        $view->setTemplate('add-triplestore/site/index/sparql');
+
         return $view;
     }
 
@@ -4618,28 +4615,116 @@ private function sendToGraphDB($data, $excavationId)
 
 
 /**
- * Retrieves GraphDB credentials from the configuration file.
- * This method checks for a custom configuration file and returns the credentials.
- * If not found, it defaults to admin:admin.
- * @return array An associative array with 'username' and 'password'
+ * Retrieves GraphDB write credentials from config file or environment.
+ *
+ * Resolution order: config file values (which themselves may read env vars)
+ * → direct env vars → fail with RuntimeException.
+ *
+ * @return array{username: string, password: string}
+ * @throws \RuntimeException When credentials cannot be resolved
  */
 private function getGraphDBCredentials()
 {
     $configFile = OMEKA_PATH . '/modules/AddTriplestore/config/graphdb.config.php';
     if (file_exists($configFile)) {
         $credentials = include $configFile;
-        if (isset($credentials['username']) && isset($credentials['password'])) {
+        if (is_array($credentials)
+            && !empty($credentials['username']) && !empty($credentials['password'])
+            && $credentials['username'] !== 'CHANGE_ME'
+            && $credentials['password'] !== 'CHANGE_ME') {
             return [
                 'username' => $credentials['username'],
-                'password' => $credentials['password']
+                'password' => $credentials['password'],
             ];
         }
     }
 
-    return [
-        'username' => 'admin',
-        'password' => 'admin'
-    ];
+    $user = getenv('GRAPHDB_USERNAME');
+    $pass = getenv('GRAPHDB_PASSWORD');
+    if (!empty($user) && !empty($pass)) {
+        return ['username' => $user, 'password' => $pass];
+    }
+
+    throw new \RuntimeException(
+        'GraphDB credentials are not configured. '
+        . 'Set GRAPHDB_USERNAME/GRAPHDB_PASSWORD environment variables or '
+        . 'configure modules/AddTriplestore/config/graphdb.config.php.'
+    );
+}
+
+/**
+ * Retrieves GraphDB read-only credentials from config file or environment.
+ *
+ * @return array{username: string, password: string}
+ * @throws \RuntimeException When read-only credentials are not configured
+ */
+private function getReadonlyGraphDBCredentials()
+{
+    $configFile = OMEKA_PATH . '/modules/AddTriplestore/config/graphdb.config.php';
+    if (file_exists($configFile)) {
+        $credentials = include $configFile;
+        if (is_array($credentials)
+            && !empty($credentials['readonly_username']) && !empty($credentials['readonly_password'])
+            && $credentials['readonly_username'] !== 'CHANGE_ME'
+            && $credentials['readonly_password'] !== 'CHANGE_ME') {
+            return [
+                'username' => $credentials['readonly_username'],
+                'password' => $credentials['readonly_password'],
+            ];
+        }
+    }
+
+    $user = getenv('GRAPHDB_READONLY_USERNAME');
+    $pass = getenv('GRAPHDB_READONLY_PASSWORD');
+    if (!empty($user) && !empty($pass)) {
+        return ['username' => $user, 'password' => $pass];
+    }
+
+    throw new \RuntimeException(
+        'GraphDB read-only credentials are not configured. '
+        . 'Set GRAPHDB_READONLY_USERNAME/GRAPHDB_READONLY_PASSWORD environment variables or '
+        . 'configure readonly_username/readonly_password in graphdb.config.php.'
+    );
+}
+
+/**
+ * Retrieves Omeka S API credentials from environment or config.
+ *
+ * @return array{base_url: string, key_identity: string, key_credential: string}
+ * @throws \RuntimeException When API credentials are not configured
+ */
+private function getOmekaApiCredentials()
+{
+    $configFile = OMEKA_PATH . '/modules/AddTriplestore/config/graphdb.config.php';
+    if (file_exists($configFile)) {
+        $config = include $configFile;
+        if (is_array($config)
+            && !empty($config['omeka_key_identity']) && !empty($config['omeka_key_credential'])
+            && $config['omeka_key_identity'] !== 'CHANGE_ME'
+            && $config['omeka_key_credential'] !== 'CHANGE_ME') {
+            return [
+                'base_url'       => $config['omeka_base_url'] ?? getenv('OMEKA_BASE_URL') ?: 'http://localhost/api',
+                'key_identity'   => $config['omeka_key_identity'],
+                'key_credential' => $config['omeka_key_credential'],
+            ];
+        }
+    }
+
+    $identity   = getenv('OMEKA_KEY_IDENTITY');
+    $credential = getenv('OMEKA_KEY_CREDENTIAL');
+    if (!empty($identity) && !empty($credential)) {
+        return [
+            'base_url'       => getenv('OMEKA_BASE_URL') ?: 'http://localhost/api',
+            'key_identity'   => $identity,
+            'key_credential' => $credential,
+        ];
+    }
+
+    throw new \RuntimeException(
+        'Omeka S API credentials are not configured. '
+        . 'Set OMEKA_KEY_IDENTITY/OMEKA_KEY_CREDENTIAL environment variables or '
+        . 'configure modules/AddTriplestore/config/graphdb.config.php.'
+    );
 }
 
 
@@ -9274,16 +9359,15 @@ private function determineItemType($subjectType) {
  * @return array An array containing errors, created items, and skipped items
  */
 private function sendToOmekaS($omekaData, $itemSetId = null) {
-    $omekaBaseUrl = 'http://localhost/api';
-    $omekaKeyIdentity = '2TGK0xT9tEMCUQs1178OyCnyRcIQpv5B';
-    $omekaKeyCredential = '9IFd207Y8D5yG1bmtnCllmbgZweuMfQA';
-    $omekaUser = 1;
+    $omekaApi = $this->getOmekaApiCredentials();
+    $omekaBaseUrl = $omekaApi['base_url'];
+    $omekaKeyIdentity = $omekaApi['key_identity'];
+    $omekaKeyCredential = $omekaApi['key_credential'];
 
     $client = new Client();
     $client->setMethod('POST');
     $client->setHeaders([
         'Content-Type' => 'application/json',
-        'Omeka-S-Api-Key' => $omekaUser,
     ]);
 
     $errors = [];

@@ -13,6 +13,7 @@ use Omeka\Permissions\Assertion\IsSelfAssertion;
 class Module extends AbstractModule
 {
     private $processedDeletions = [];
+    private $graphdbCredentials = null;
 
     /**
      * Get module configuration
@@ -22,6 +23,48 @@ class Module extends AbstractModule
     public function getConfig()
     {
         return include __DIR__ . '/config/module.config.php';
+    }
+
+    /**
+     * Load GraphDB write credentials from config file or environment.
+     * Throws RuntimeException if no credentials are available.
+     *
+     * @return array{username: string, password: string}
+     * @throws \RuntimeException
+     */
+    private function loadGraphDBCredentials()
+    {
+        if ($this->graphdbCredentials !== null) {
+            return $this->graphdbCredentials;
+        }
+
+        $configFile = __DIR__ . '/config/graphdb.config.php';
+        if (file_exists($configFile)) {
+            $config = include $configFile;
+            if (is_array($config)
+                && !empty($config['username']) && !empty($config['password'])
+                && $config['username'] !== 'CHANGE_ME'
+                && $config['password'] !== 'CHANGE_ME') {
+                $this->graphdbCredentials = [
+                    'username' => $config['username'],
+                    'password' => $config['password'],
+                ];
+                return $this->graphdbCredentials;
+            }
+        }
+
+        $user = getenv('GRAPHDB_USERNAME');
+        $pass = getenv('GRAPHDB_PASSWORD');
+        if (!empty($user) && !empty($pass)) {
+            $this->graphdbCredentials = ['username' => $user, 'password' => $pass];
+            return $this->graphdbCredentials;
+        }
+
+        throw new \RuntimeException(
+            'GraphDB credentials are not configured. '
+            . 'Set GRAPHDB_USERNAME/GRAPHDB_PASSWORD environment variables or '
+            . 'configure modules/AddTriplestore/config/graphdb.config.php.'
+        );
     }
 
 /**
@@ -722,12 +765,15 @@ WHERE {
      * @return \Laminas\Http\Response
      */
     private function executeSparqlQuery($endpoint, $query) {
+        $credentials = $this->loadGraphDBCredentials();
+
         $client = new Client();
         $client->setMethod('POST');
         $client->setUri(str_replace('/statements', '', $endpoint));
         $client->setHeaders([
             'Content-Type' => 'application/sparql-query',
-            'Accept' => 'application/json'
+            'Accept' => 'application/json',
+            'Authorization' => 'Basic ' . base64_encode($credentials['username'] . ':' . $credentials['password']),
         ]);
         $client->setRawBody($query);
         
@@ -868,12 +914,15 @@ WHERE {
      */
     private function executeSparqlUpdate($endpoint, $query)
     {
+        $credentials = $this->loadGraphDBCredentials();
+
         $client = new Client();
         $client->setMethod('POST');
         $client->setUri($endpoint);
         $client->setHeaders([
             'Content-Type' => 'application/sparql-update',
-            'Accept' => 'application/json'
+            'Accept' => 'application/json',
+            'Authorization' => 'Basic ' . base64_encode($credentials['username'] . ':' . $credentials['password']),
         ]);
         $client->setRawBody($query);
         

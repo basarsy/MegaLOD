@@ -6,13 +6,13 @@
         <p>You are accessing the GraphDB SPARQL interface with read-only permissions. You can query the data but cannot make changes.</p>
         <div class="access-info">
             <span class="access-badge">Read-Only Access</span>
-            <span class="user-info">Logged in as: read_only_user</span>
+            <span class="user-info">Log in with your GraphDB credentials if prompted</span>
         </div>
     </div>
     
     <div class="graphdb-container">
         <iframe 
-            src="<?php echo $this->escapeHtmlAttr($graphdbUrl ?? 'http://localhost:7200/repositories/megalod/sparql'); ?>" 
+            src="<?php echo $this->escapeHtmlAttr($graphdbUrl); ?>" 
             width="100%" 
             height="800px" 
             frameborder="0"

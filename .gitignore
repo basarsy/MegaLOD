@@ -6,6 +6,8 @@
 .env
 .env.*
 !.env.example
+software/omeka-s/.env
+software/omeka-s/modules/AddTriplestore/config/.env
 *.pem
 *.key
 *.p12

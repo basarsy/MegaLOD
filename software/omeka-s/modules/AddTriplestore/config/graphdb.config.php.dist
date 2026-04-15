@@ -1,13 +1,26 @@
 <?php
 /**
- * GraphDB connection configuration.
+ * GraphDB and API connection configuration.
  *
- * Copy this file to graphdb.config.php and fill in real credentials.
- * NEVER commit graphdb.config.php to version control.
+ * SETUP:
+ *   1. Copy this file:  cp graphdb.config.php.dist graphdb.config.php
+ *   2. Set environment variables (recommended) OR replace the fallback values below.
+ *   3. NEVER commit graphdb.config.php to version control.
+ *
+ * The application will refuse to start if required credentials resolve to
+ * empty strings or the placeholder 'CHANGE_ME'.
  */
 return [
+    // GraphDB write credentials (required)
     'username'          => getenv('GRAPHDB_USERNAME') ?: 'CHANGE_ME',
     'password'          => getenv('GRAPHDB_PASSWORD') ?: 'CHANGE_ME',
+
+    // GraphDB read-only credentials (optional; falls back to write creds)
     'readonly_username' => getenv('GRAPHDB_READONLY_USERNAME') ?: 'CHANGE_ME',
     'readonly_password' => getenv('GRAPHDB_READONLY_PASSWORD') ?: 'CHANGE_ME',
+
+    // Omeka S internal API credentials (required for data ingestion)
+    'omeka_base_url'       => getenv('OMEKA_BASE_URL') ?: 'http://localhost/api',
+    'omeka_key_identity'   => getenv('OMEKA_KEY_IDENTITY') ?: 'CHANGE_ME',
+    'omeka_key_credential' => getenv('OMEKA_KEY_CREDENTIAL') ?: 'CHANGE_ME',
 ];

@@ -54,25 +54,25 @@ If you don't have the Collecting module installed:
 cp -r AddTriplestore/modules/Collecting modules/
 ```
 
-### 3. Configure GraphDB (Optional but Recommended)
+### 3. Configure GraphDB (Required)
 
 1. **Install GraphDB** (if not already installed):
    - Download GraphDB from [Ontotext](https://www.ontotext.com/products/graphdb/)
    - Follow installation instructions for your platform
 
-2. **Create GraphDB configuration** (optional):
+2. **Create the credentials configuration**:
    ```sh
    cp modules/AddTriplestore/config/graphdb.config.php.dist modules/AddTriplestore/config/graphdb.config.php
    ```
 
-3. **Edit the configuration file**:
-   ```php
-   <?php
-   return [
-       'username' => 'your_graphdb_username',
-       'password' => 'your_graphdb_password'
-   ];
+3. **Set environment variables** (recommended) or edit the config file directly:
+   ```sh
+   export GRAPHDB_USERNAME=your_graphdb_user
+   export GRAPHDB_PASSWORD=your_graphdb_password
+   export OMEKA_KEY_IDENTITY=your_omeka_api_key_identity
+   export OMEKA_KEY_CREDENTIAL=your_omeka_api_key_credential
    ```
+   The application will refuse to start if required credentials are missing — there are no insecure defaults.
 
 ### 4. Install Modules in Omeka S
 
@@ -148,15 +148,23 @@ The included Collecting module has been modified to support archaeological data 
 
 ### GraphDB Configuration
 
-Create `modules/AddTriplestore/config/graphdb.config.php`:
+Create the config file from the template and set credentials via environment variables:
 
-```php
-<?php
-return [
-    'username' => 'admin',
-    'password' => 'admin'
-];
+```sh
+cp modules/AddTriplestore/config/graphdb.config.php.dist \
+   modules/AddTriplestore/config/graphdb.config.php
 ```
+
+Required environment variables (see `.env.example` in the project root):
+
+| Variable | Purpose |
+|----------|---------|
+| `GRAPHDB_USERNAME` | GraphDB write user |
+| `GRAPHDB_PASSWORD` | GraphDB write password |
+| `GRAPHDB_READONLY_USERNAME` | GraphDB read-only user (optional, falls back to write) |
+| `GRAPHDB_READONLY_PASSWORD` | GraphDB read-only password (optional) |
+| `OMEKA_KEY_IDENTITY` | Omeka S API key identity |
+| `OMEKA_KEY_CREDENTIAL` | Omeka S API key credential |
 
 ### Template Files
 
@@ -212,8 +220,9 @@ The module supports structured archaeological data including:
 ### Common Issues
 
 1. **GraphDB Connection Issues**:
-   - Verify GraphDB is running on `http://localhost:7200`
-   - Check credentials in configuration file
+   - Verify GraphDB is running (default: `http://localhost:7200`)
+   - Verify environment variables `GRAPHDB_USERNAME`/`GRAPHDB_PASSWORD` are set
+   - Check `graphdb.config.php` exists and has valid credentials
    - Ensure network connectivity
 
 2. **File Upload Issues**:

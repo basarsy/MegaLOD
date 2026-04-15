@@ -24,7 +24,7 @@ MegaLOD/
 │   ├── excavation.ttl                      #   Excavation classes and properties
 │   ├── arrowhead.ttl                       #   Arrowhead classes and properties
 │   └── axe.ttl                             #   Axe classes and properties
-├── vocabularies/                           # SKOS controlled vocabularies (.ttl)
+├── ves/                                    # SKOS controlled vocabularies (.ttl)
 │   ├── README.md
 │   ├── MegaLOD-BCAD.ttl                    #   Global: BC/AD
 │   ├── MegaLOD-IndexElongation.ttl         #   Global: elongation index
@@ -44,7 +44,7 @@ MegaLOD/
 | Folder | Owner |
 |--------|----------------|
 | `metadata-schemes/` | Ontology team |
-| `vocabularies/` | Ontology team |
+| `ves/` | Ontology team |
 | `software/` | Development team |
 | `MAP.md` | Ontology team |
 
