@@ -12,8 +12,21 @@ if (!isset($_GET['query'])) {
 // Get the SPARQL query from the request
 $sparqlQuery = $_GET['query'];
 
-// GraphDB SPARQL endpoint
-$endpoint = 'http://ec2-13-61-100-218.eu-north-1.compute.amazonaws.com:7200/repositories/arch-project-repository'; // Replace with your repository details
+// GraphDB SPARQL endpoint — resolved from environment
+$graphdbBaseUrl = getenv('GRAPHDB_BASE_URL') ?: null;
+if (empty($graphdbBaseUrl)) {
+    $host = getenv('GRAPHDB_HOST');
+    $port = getenv('GRAPHDB_PORT');
+    if ($host && $port) {
+        $graphdbBaseUrl = "http://$host:$port";
+    }
+}
+$graphdbRepo = getenv('GRAPHDB_REPOSITORY') ?: null;
+if (empty($graphdbBaseUrl) || empty($graphdbRepo)) {
+    echo json_encode(['error' => 'GraphDB endpoint not configured. Set GRAPHDB_BASE_URL and GRAPHDB_REPOSITORY env vars.']);
+    exit;
+}
+$endpoint = rtrim($graphdbBaseUrl, '/') . '/repositories/' . $graphdbRepo;
 
 // Initialize cURL
 $ch = curl_init();

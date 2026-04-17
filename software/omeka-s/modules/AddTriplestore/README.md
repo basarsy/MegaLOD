@@ -67,8 +67,14 @@ cp -r AddTriplestore/modules/Collecting modules/
 
 3. **Set environment variables** (recommended) or edit the config file directly:
    ```sh
+   export GRAPHDB_HOST=127.0.0.1
+   export GRAPHDB_PORT=7200
+   export GRAPHDB_REPOSITORY=megalod
    export GRAPHDB_USERNAME=your_graphdb_user
    export GRAPHDB_PASSWORD=your_graphdb_password
+   export MEGALOD_PUBLIC_BASE_URI=https://purl.org/megalod/
+   export MEGALOD_LOCAL_BASE_URI=http://localhost/megalod/
+   export OMEKA_BASE_URL=http://localhost/api
    export OMEKA_KEY_IDENTITY=your_omeka_api_key_identity
    export OMEKA_KEY_CREDENTIAL=your_omeka_api_key_credential
    ```
@@ -159,10 +165,18 @@ Required environment variables (see `.env.example` in the project root):
 
 | Variable | Purpose |
 |----------|---------|
+| `GRAPHDB_HOST` | GraphDB hostname (or use `GRAPHDB_BASE_URL`) |
+| `GRAPHDB_PORT` | GraphDB port (or use `GRAPHDB_BASE_URL`) |
+| `GRAPHDB_BASE_URL` | Full GraphDB base URL (alternative to HOST+PORT) |
+| `GRAPHDB_REPOSITORY` | GraphDB repository name |
 | `GRAPHDB_USERNAME` | GraphDB write user |
 | `GRAPHDB_PASSWORD` | GraphDB write password |
 | `GRAPHDB_READONLY_USERNAME` | GraphDB read-only user (optional, falls back to write) |
 | `GRAPHDB_READONLY_PASSWORD` | GraphDB read-only password (optional) |
+| `GRAPHDB_WORKBENCH_URL` | GraphDB Workbench URL for SPARQL UI |
+| `MEGALOD_PUBLIC_BASE_URI` | Canonical persistent namespace for named graphs |
+| `MEGALOD_LOCAL_BASE_URI` | Local entity base URI for the Omeka installation |
+| `OMEKA_BASE_URL` | Omeka S API base URL |
 | `OMEKA_KEY_IDENTITY` | Omeka S API key identity |
 | `OMEKA_KEY_CREDENTIAL` | Omeka S API key credential |
 
@@ -220,9 +234,10 @@ The module supports structured archaeological data including:
 ### Common Issues
 
 1. **GraphDB Connection Issues**:
-   - Verify GraphDB is running (default: `http://localhost:7200`)
-   - Verify environment variables `GRAPHDB_USERNAME`/`GRAPHDB_PASSWORD` are set
-   - Check `graphdb.config.php` exists and has valid credentials
+   - Verify GraphDB is running at the configured `GRAPHDB_BASE_URL` (or `GRAPHDB_HOST:GRAPHDB_PORT`)
+   - Verify `GRAPHDB_REPOSITORY`, `GRAPHDB_USERNAME`, and `GRAPHDB_PASSWORD` are set
+   - Verify `MEGALOD_LOCAL_BASE_URI` and `OMEKA_BASE_URL` are set
+   - Check `graphdb.config.php` exists and has valid configuration
    - Ensure network connectivity
 
 2. **File Upload Issues**:

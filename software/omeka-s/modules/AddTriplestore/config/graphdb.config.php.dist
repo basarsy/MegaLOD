@@ -11,16 +11,32 @@
  * empty strings or the placeholder 'CHANGE_ME'.
  */
 return [
-    // GraphDB write credentials (required)
+    // --- GraphDB HTTP connection ---
+    'graphdb_base_url'  => getenv('GRAPHDB_BASE_URL')
+        ?: (getenv('GRAPHDB_HOST') && getenv('GRAPHDB_PORT')
+            ? 'http://' . getenv('GRAPHDB_HOST') . ':' . getenv('GRAPHDB_PORT')
+            : 'CHANGE_ME'),
+    'graphdb_repository' => getenv('GRAPHDB_REPOSITORY') ?: 'CHANGE_ME',
+
+    // --- GraphDB Workbench URL (for SPARQL UI redirect) ---
+    'graphdb_workbench_url' => getenv('GRAPHDB_WORKBENCH_URL') ?: 'CHANGE_ME',
+
+    // --- GraphDB write credentials (required) ---
     'username'          => getenv('GRAPHDB_USERNAME') ?: 'CHANGE_ME',
     'password'          => getenv('GRAPHDB_PASSWORD') ?: 'CHANGE_ME',
 
-    // GraphDB read-only credentials (optional; falls back to write creds)
+    // --- GraphDB read-only credentials (optional; falls back to write creds) ---
     'readonly_username' => getenv('GRAPHDB_READONLY_USERNAME') ?: 'CHANGE_ME',
     'readonly_password' => getenv('GRAPHDB_READONLY_PASSWORD') ?: 'CHANGE_ME',
 
-    // Omeka S internal API credentials (required for data ingestion)
-    'omeka_base_url'       => getenv('OMEKA_BASE_URL') ?: 'http://localhost/api',
+    // --- MegaLOD URI strategy ---
+    // Canonical persistent namespace (used for named graphs in GraphDB).
+    'megalod_public_base_uri' => getenv('MEGALOD_PUBLIC_BASE_URI') ?: 'https://purl.org/megalod/',
+    // Local entity base URI (used for entity IRIs within the Omeka instance).
+    'megalod_local_base_uri'  => getenv('MEGALOD_LOCAL_BASE_URI') ?: 'CHANGE_ME',
+
+    // --- Omeka S internal API credentials (required for data ingestion) ---
+    'omeka_base_url'       => getenv('OMEKA_BASE_URL') ?: 'CHANGE_ME',
     'omeka_key_identity'   => getenv('OMEKA_KEY_IDENTITY') ?: 'CHANGE_ME',
     'omeka_key_credential' => getenv('OMEKA_KEY_CREDENTIAL') ?: 'CHANGE_ME',
 ];

@@ -14,6 +14,7 @@ class Module extends AbstractModule
 {
     private $processedDeletions = [];
     private $graphdbCredentials = null;
+    private $graphdbConfig = null;
 
     /**
      * Get module configuration
@@ -65,6 +66,85 @@ class Module extends AbstractModule
             . 'Set GRAPHDB_USERNAME/GRAPHDB_PASSWORD environment variables or '
             . 'configure modules/AddTriplestore/config/graphdb.config.php.'
         );
+    }
+
+    /**
+     * Load GraphDB connection config (base URL, repository, public base URI).
+     *
+     * @return array{graphdb_base_url: string, graphdb_repository: string, megalod_public_base_uri: string}
+     * @throws \RuntimeException
+     */
+    private function loadGraphdbConfig(): array
+    {
+        if ($this->graphdbConfig !== null) {
+            return $this->graphdbConfig;
+        }
+
+        $configFile = __DIR__ . '/config/graphdb.config.php';
+        $fileConfig = [];
+        if (file_exists($configFile)) {
+            $loaded = include $configFile;
+            if (is_array($loaded)) {
+                $fileConfig = $loaded;
+            }
+        }
+
+        $baseUrl = $fileConfig['graphdb_base_url'] ?? null;
+        if (empty($baseUrl) || $baseUrl === 'CHANGE_ME') {
+            $baseUrl = getenv('GRAPHDB_BASE_URL') ?: null;
+        }
+        if (empty($baseUrl) || $baseUrl === 'CHANGE_ME') {
+            $host = getenv('GRAPHDB_HOST');
+            $port = getenv('GRAPHDB_PORT');
+            if ($host && $port) {
+                $baseUrl = "http://$host:$port";
+            }
+        }
+        if (empty($baseUrl) || $baseUrl === 'CHANGE_ME') {
+            throw new \RuntimeException(
+                'GraphDB connection is not configured. '
+                . 'Set GRAPHDB_BASE_URL (or GRAPHDB_HOST + GRAPHDB_PORT) environment variables.'
+            );
+        }
+
+        $repo = $fileConfig['graphdb_repository'] ?? null;
+        if (empty($repo) || $repo === 'CHANGE_ME') {
+            $repo = getenv('GRAPHDB_REPOSITORY') ?: null;
+        }
+        if (empty($repo) || $repo === 'CHANGE_ME') {
+            throw new \RuntimeException(
+                'GraphDB repository is not configured. Set GRAPHDB_REPOSITORY environment variable.'
+            );
+        }
+
+        $publicBase = $fileConfig['megalod_public_base_uri'] ?? null;
+        if (empty($publicBase) || $publicBase === 'CHANGE_ME') {
+            $publicBase = getenv('MEGALOD_PUBLIC_BASE_URI') ?: 'https://purl.org/megalod/';
+        }
+
+        $this->graphdbConfig = [
+            'graphdb_base_url'        => rtrim($baseUrl, '/'),
+            'graphdb_repository'      => $repo,
+            'megalod_public_base_uri' => rtrim($publicBase, '/') . '/',
+        ];
+        return $this->graphdbConfig;
+    }
+
+    private function getGraphdbStatementsEndpoint(): string
+    {
+        $c = $this->loadGraphdbConfig();
+        return $c['graphdb_base_url'] . '/repositories/' . $c['graphdb_repository'] . '/statements';
+    }
+
+    private function getGraphdbQueryEndpoint(): string
+    {
+        $c = $this->loadGraphdbConfig();
+        return $c['graphdb_base_url'] . '/repositories/' . $c['graphdb_repository'];
+    }
+
+    private function getPublicBaseUri(): string
+    {
+        return $this->loadGraphdbConfig()['megalod_public_base_uri'];
     }
 
 /**
@@ -553,7 +633,7 @@ WHERE {
 LIMIT 50";
 
         try {
-            $response = $this->executeSparqlQuery("http://localhost:7200/repositories/megalod/statements", $query);
+            $response = $this->executeSparqlQuery($this->getGraphdbStatementsEndpoint(), $query);
             $results = json_decode($response->getBody(), true);
             
             if (isset($results['results']['bindings'])) {
@@ -634,8 +714,8 @@ LIMIT 50";
      */
     private function deleteFromGraphDB($identifier, $itemId, $graphId)
     {
-        $graphdbEndpoint = "http://localhost:7200/repositories/megalod/statements";
-        $baseDataGraphUri = "https://purl.org/megalod/";
+        $graphdbEndpoint = $this->getGraphdbStatementsEndpoint();
+        $baseDataGraphUri = $this->getPublicBaseUri();
         $graphUri = $baseDataGraphUri . $graphId . "/";
         
         error_log("=== ENHANCED GRAPHDB DELETION ===", 3, OMEKA_PATH . '/logs/finalDelete.log');
@@ -700,7 +780,7 @@ LIMIT 50";
                     error_log("✓ SUCCESS: Deleted $tripleCount triples for identifier '$identifier'", 3, OMEKA_PATH . '/logs/finalDelete.log');
                     
 
-                    $verifyCountResponse = $this->executeSparqlQuery("http://localhost:7200/repositories/megalod", $countQuery);
+                    $verifyCountResponse = $this->executeSparqlQuery($this->getGraphdbQueryEndpoint(), $countQuery);
                     $verifyCountData = json_decode($verifyCountResponse->getBody(), true);
                     if ($verifyCountData && isset($verifyCountData['results']['bindings']) && 
                         !empty($verifyCountData['results']['bindings'])) {
@@ -728,7 +808,7 @@ LIMIT 50";
  * @return string
  */
 private function buildCountQuery($graphUri, $identifier, $graphId) {
-    $itemUri = "https://purl.org/megalod/" . $graphId . "/item/" . $identifier;
+    $itemUri = $this->getPublicBaseUri() . $graphId . "/item/" . $identifier;
     
     return "
 PREFIX dct: <http://purl.org/dc/terms/>
@@ -799,7 +879,7 @@ private function deleteResourceByIdentifier($endpoint, $graphUri, $identifier, $
     error_log("Deleting identifier '$identifier' from graph $graphUri", 3, OMEKA_PATH . '/logs/finalDelete.log');
     
 
-    $itemUri = "https://purl.org/megalod/" . $graphId . "/item/" . $identifier;
+    $itemUri = $this->getPublicBaseUri() . $graphId . "/item/" . $identifier;
     
     $query = "
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>

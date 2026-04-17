@@ -19,9 +19,26 @@ use Collecting\Entity\CollectingForm;
 
 class IndexController extends AbstractActionController
 {
-    private $graphdbEndpoint = "http://localhost:7200/repositories/arch-project-shacl/rdf-graphs/service";
-    private $graphdbQueryEndpoint = "http://localhost:7200/repositories/arch-project-shacl";
-    private $dataGraphUri = "http://www.arch-project.com/data";
+    private $graphdbEndpoint;
+    private $graphdbQueryEndpoint;
+    private $dataGraphUri;
+    private $shapesGraphUri;
+
+    public function __construct()
+    {
+        $baseUrl = getenv('GRAPHDB_BASE_URL') ?: null;
+        if (empty($baseUrl)) {
+            $host = getenv('GRAPHDB_HOST') ?: '127.0.0.1';
+            $port = getenv('GRAPHDB_PORT') ?: '7200';
+            $baseUrl = "http://$host:$port";
+        }
+        $repo = getenv('RDFEXPORT_GRAPHDB_REPOSITORY') ?: getenv('GRAPHDB_REPOSITORY') ?: 'arch-project-shacl';
+
+        $this->graphdbEndpoint      = rtrim($baseUrl, '/') . "/repositories/$repo/rdf-graphs/service";
+        $this->graphdbQueryEndpoint = rtrim($baseUrl, '/') . "/repositories/$repo";
+        $this->dataGraphUri         = getenv('RDFEXPORT_DATA_GRAPH_URI') ?: 'http://www.arch-project.com/data';
+        $this->shapesGraphUri       = getenv('RDFEXPORT_SHAPES_GRAPH_URI') ?: 'http://www.arch-project.com/shapes';
+    }
 
     public function indexAction()
     {
@@ -234,25 +251,27 @@ class IndexController extends AbstractActionController
 
         try {
             // 1. Prepare the validation query
+            $shapesGraph = $this->shapesGraphUri;
+            $dataGraph   = $this->dataGraphUri;
             $query = "PREFIX sh: <http://www.w3.org/ns/shacl#>
             PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
             
             SELECT ?message
             WHERE {
-              GRAPH <http://www.arch-project.com/shapes> {
+              GRAPH <$shapesGraph> {
                 ?shape a sh:NodeShape .
               }
-              GRAPH <http://www.arch-project.com/data> {
+              GRAPH <$dataGraph> {
                 ?focusNode ?predicate ?object .
               }
               FILTER EXISTS {
-                  GRAPH <http://www.arch-project.com/shapes> {
+                  GRAPH <$shapesGraph> {
                     ?shape sh:targetClass ?targetClass .
                     FILTER NOT EXISTS { ?focusNode a ?targetClass }
                   }
               }
               FILTER EXISTS {
-                  GRAPH <http://www.arch-project.com/shapes> {
+                  GRAPH <$shapesGraph> {
                     ?shape sh:property ?propertyShape .
                     ?propertyShape sh:path ?path .
                     FILTER NOT EXISTS { ?focusNode ?path ?object }
