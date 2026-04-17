@@ -4665,9 +4665,10 @@ private function getGraphDBCredentials()
 
 /**
  * Retrieves GraphDB read-only credentials from config file or environment.
+ * Falls back to write credentials when read-only credentials are not configured.
  *
  * @return array{username: string, password: string}
- * @throws \RuntimeException When read-only credentials are not configured
+ * @throws \RuntimeException When neither read-only nor write credentials are configured
  */
 private function getReadonlyGraphDBCredentials()
 {
@@ -4691,11 +4692,7 @@ private function getReadonlyGraphDBCredentials()
         return ['username' => $user, 'password' => $pass];
     }
 
-    throw new \RuntimeException(
-        'GraphDB read-only credentials are not configured. '
-        . 'Set GRAPHDB_READONLY_USERNAME/GRAPHDB_READONLY_PASSWORD environment variables or '
-        . 'configure readonly_username/readonly_password in graphdb.config.php.'
-    );
+    return $this->getGraphDBCredentials();
 }
 
 /**

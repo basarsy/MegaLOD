@@ -26,8 +26,8 @@ return [
     'password'          => getenv('GRAPHDB_PASSWORD') ?: 'CHANGE_ME',
 
     // --- GraphDB read-only credentials (optional; falls back to write creds) ---
-    'readonly_username' => getenv('GRAPHDB_READONLY_USERNAME') ?: 'CHANGE_ME',
-    'readonly_password' => getenv('GRAPHDB_READONLY_PASSWORD') ?: 'CHANGE_ME',
+    'readonly_username' => getenv('GRAPHDB_READONLY_USERNAME') ?: '',
+    'readonly_password' => getenv('GRAPHDB_READONLY_PASSWORD') ?: '',
 
     // --- MegaLOD URI strategy ---
     // Canonical persistent namespace (used for named graphs in GraphDB).

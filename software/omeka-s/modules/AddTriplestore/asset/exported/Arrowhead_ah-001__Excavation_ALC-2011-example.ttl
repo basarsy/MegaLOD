@@ -26,34 +26,34 @@
 
 # =========== MAIN ARCHAEOLOGICAL ITEM ===========
 
-<http://localhost/megalod/3440/item/ah-001>
+<https://purl.org/megalod/3440/item/ah-001>
     a ah:Arrowhead, excav:Item ;
     dct:identifier "ah-001"^^xsd:literal ;
     ah:shape <https://purl.org/megalod/kos/ah-shape/stemmed> ;
     crm:E55_Type true ;
     ah:variant <https://purl.org/megalod/kos/ah-variant/raised> ;
-    ah:hasMorphology <http://localhost/megalod/3440/item/ah-001/morphology/ah-057-morphology> ;
-    ah:hasChipping <http://localhost/megalod/3440/item/ah-001/chipping/ah-057-chipping> ;
+    ah:hasMorphology <https://purl.org/megalod/3440/item/ah-001/morphology/ah-057-morphology> ;
+    ah:hasChipping <https://purl.org/megalod/3440/item/ah-001/chipping/ah-057-chipping> ;
     crm:E57_Material <http://vocab.getty.edu/page/aat/300057143> ;
     crm:E3_Condition_State true ;
-    schema:height <http://localhost/megalod/3440/item/ah-001/typometry/ah-057-height> ;
-    schema:width <http://localhost/megalod/3440/item/ah-001/typometry/ah-057-width> ;
-    schema:depth <http://localhost/megalod/3440/item/ah-001/typometry/ah-057-depth> ;
-    schema:weight <http://localhost/megalod/3440/item/ah-001/weight/ah-057-weight> ;
+    schema:height <https://purl.org/megalod/3440/item/ah-001/typometry/ah-057-height> ;
+    schema:width <https://purl.org/megalod/3440/item/ah-001/typometry/ah-057-width> ;
+    schema:depth <https://purl.org/megalod/3440/item/ah-001/typometry/ah-057-depth> ;
+    schema:weight <https://purl.org/megalod/3440/item/ah-001/weight/ah-057-weight> ;
     excav:elongationIndex <https://purl.org/megalod/kos/MegaLOD-IndexElongation/Elongated> ;
     excav:thicknessIndex <https://purl.org/megalod/kos/MegaLOD-IndexThickness/Medium> ;
-    excav:hasCoordinatesInSquare <http://localhost/megalod/3440/item/ah-001/coordinates/ah-057-coordinates> ;
+    excav:hasCoordinatesInSquare <https://purl.org/megalod/3440/item/ah-001/coordinates/ah-057-coordinates> ;
     dbo:Annotation "Large, stemmed arrowhead with bifacial retouch"^^xsd:literal ;
-    excav:foundInSquare <http://localhost/megalod/3440/excavation/ALC-2011/square/A1> ;
+    excav:foundInSquare <https://purl.org/megalod/3440/excavation/ALC-2011/square/A1> ;
     edm:Webresource <https://example.com/images/arrowhead-002.jpg> ;
-    ah:hasBodyLength <http://localhost/megalod/3440/item/ah-001/bodylength/ah-057-bodylength> ;
-    ah:hasBaseLength <http://localhost/megalod/3440/item/ah-001/baselength/ah-057-baselength> ;
-    crmsci:O19i_was_object_encountered_through <http://localhost/megalod/3440/excavation/ALC-2011/encounter/encounter-3452> .
+    ah:hasBodyLength <https://purl.org/megalod/3440/item/ah-001/bodylength/ah-057-bodylength> ;
+    ah:hasBaseLength <https://purl.org/megalod/3440/item/ah-001/baselength/ah-057-baselength> ;
+    crmsci:O19i_was_object_encountered_through <https://purl.org/megalod/3440/excavation/ALC-2011/encounter/encounter-3452> .
 
 
 # =========== MORPHOLOGY ===========
 
-<http://localhost/megalod/3440/item/ah-001/morphology/ah-057-morphology>
+<https://purl.org/megalod/3440/item/ah-001/morphology/ah-057-morphology>
     a ah:Morphology ;
     ah:point true ;
     ah:body true ;
@@ -62,7 +62,7 @@
 
 # =========== CHIPPING ===========
 
-<http://localhost/megalod/3440/item/ah-001/chipping/ah-057-chipping>
+<https://purl.org/megalod/3440/item/ah-001/chipping/ah-057-chipping>
     a ah:Chipping ;
     ah:chippingMode <https://purl.org/megalod/kos/ah-chippingMode/parallel> ;
     ah:chippingAmplitude false ;
@@ -78,27 +78,27 @@
 
 # =========== TYPOMETRY VALUES ===========
 
-<http://localhost/megalod/3440/item/ah-001/typometry/ah-057-height>
+<https://purl.org/megalod/3440/item/ah-001/typometry/ah-057-height>
     a excav:TypometryValue ;
     schema:value 5.1 ;
     schema:UnitCode <http://qudt.org/vocab/unit/CMT> .
 
-<http://localhost/megalod/3440/item/ah-001/typometry/ah-057-width>
+<https://purl.org/megalod/3440/item/ah-001/typometry/ah-057-width>
     a excav:TypometryValue ;
     schema:value 2.8 ;
     schema:UnitCode <http://qudt.org/vocab/unit/CMT> .
 
-<http://localhost/megalod/3440/item/ah-001/typometry/ah-057-depth>
+<https://purl.org/megalod/3440/item/ah-001/typometry/ah-057-depth>
     a excav:TypometryValue ;
     schema:value 0.7 ;
     schema:UnitCode <http://qudt.org/vocab/unit/CMT> .
 
-<http://localhost/megalod/3440/item/ah-001/bodylength/ah-057-bodylength>
+<https://purl.org/megalod/3440/item/ah-001/bodylength/ah-057-bodylength>
     a excav:TypometryValue ;
     schema:value 4.5 ;
     schema:UnitCode <http://qudt.org/vocab/unit/CMT> .
 
-<http://localhost/megalod/3440/item/ah-001/baselength/ah-057-baselength>
+<https://purl.org/megalod/3440/item/ah-001/baselength/ah-057-baselength>
     a excav:TypometryValue ;
     schema:value 2.0 ;
     schema:UnitCode <http://qudt.org/vocab/unit/CMT> .
@@ -106,7 +106,7 @@
 
 # =========== WEIGHT VALUES ===========
 
-<http://localhost/megalod/3440/item/ah-001/weight/ah-057-weight>
+<https://purl.org/megalod/3440/item/ah-001/weight/ah-057-weight>
     a excav:Weight ;
     schema:value 12.5 ;
     schema:UnitCode <http://qudt.org/vocab/unit/GRM> .
@@ -114,21 +114,21 @@
 
 # =========== COORDINATES IN SQUARE ===========
 
-<http://localhost/megalod/3440/item/ah-001/coordinates/ah-057-coordinates>
+<https://purl.org/megalod/3440/item/ah-001/coordinates/ah-057-coordinates>
     a excav:Coordinates ;
-    geo:lat <http://localhost/megalod/3440/item/ah-001/typometry/ah-057-y> ;
-    geo:long <http://localhost/megalod/3440/item/ah-001/typometry/ah-057-x> ;
-    schema:depth <http://localhost/megalod/3440/item/ah-001/typometry/ah-057-z> .
+    geo:lat <https://purl.org/megalod/3440/item/ah-001/typometry/ah-057-y> ;
+    geo:long <https://purl.org/megalod/3440/item/ah-001/typometry/ah-057-x> ;
+    schema:depth <https://purl.org/megalod/3440/item/ah-001/typometry/ah-057-z> .
 
 
 # =========== ENCOUNTER EVENTS ===========
 
-<http://localhost/megalod/3440/excavation/ALC-2011/encounter/encounter-3452>
+<https://purl.org/megalod/3440/excavation/ALC-2011/encounter/encounter-3452>
     a excav:EncounterEvent ;
-    crmsci:O19_encountered_object <http://localhost/megalod/3440/item/ah-001> ;
-    excav:foundInSVU <http://localhost/megalod/3440/excavation/ALC-2011/svu/Layer-02> ;
-    excav:foundInContext <http://localhost/megalod/3440/excavation/ALC-2011/context/CTX-001> ;
-    excav:foundInExcavation <http://localhost/megalod/3440/excavation/ALC-2011> ;
-    excav:foundInLocation <http://localhost/megalod/3440/excavation/ALC-2011/location/alto-castelinho> .
+    crmsci:O19_encountered_object <https://purl.org/megalod/3440/item/ah-001> ;
+    excav:foundInSVU <https://purl.org/megalod/3440/excavation/ALC-2011/svu/Layer-02> ;
+    excav:foundInContext <https://purl.org/megalod/3440/excavation/ALC-2011/context/CTX-001> ;
+    excav:foundInExcavation <https://purl.org/megalod/3440/excavation/ALC-2011> ;
+    excav:foundInLocation <https://purl.org/megalod/3440/excavation/ALC-2011/location/alto-castelinho> .
 
 
