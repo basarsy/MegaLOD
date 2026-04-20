@@ -18,7 +18,10 @@ Once published, MegaLOD datasets join the LOD cloud alongside resources from [Pe
 
 ```
 MegaLOD/
+├── NAMESPACE_POLICY.md                     # Canonical https://purl.org/megalod/ IRIs
 ├── MAP.md                                  # Metadata Application Profile V1.1
+├── scripts/                                # validate_turtle.py, validate_shacl_samples.py
+├── .github/workflows/rdf-validation.yml    # CI: Turtle parse + SHACL samples
 ├── metadata-schemes/                       # OWL/RDFS ontology definitions (.ttl)
 │   ├── README.md
 │   ├── excavation.ttl                      #   Excavation classes and properties
@@ -52,7 +55,7 @@ MegaLOD/
 
 The `AddTriplestore` module connects Omeka S to a GraphDB triplestore, enabling SPARQL queries and RDF export of excavation and artefact data.
 
-**Setup:** Copy `graphdb.config.php.dist` to `graphdb.config.php` and fill in your GraphDB credentials.
+**Setup:** Copy `graphdb.config.php.dist` to `graphdb.config.php` and fill in your GraphDB credentials. **Base URIs** for public namespaces and services are environment-driven; see `modules/AddTriplestore/README.md` (`MEGALOD_PUBLIC_BASE_URI`, `GRAPHDB_BASE_URL`, etc.).
 
 ```
 software/omeka-s/modules/AddTriplestore/config/
@@ -61,6 +64,12 @@ software/omeka-s/modules/AddTriplestore/config/
 ├── module.ini
 └── module.config.php
 ```
+
+## RDF / ontology quality
+
+- **Canonical IRIs:** `NAMESPACE_POLICY.md` (use `https://` for `purl.org/megalod/`). Published RDF uses those full IRI strings as identifiers; that is independent of where a browser redirect for the bare domain happens to land.
+- **PURL vs this repository:** The hostname `purl.org` is administered separately. Opening [https://purl.org/megalod](https://purl.org/megalod) may redirect to a GitHub tree that is **not** this repo. **Maintainers here do not control that redirect.** For the ontology files, MAP, and software in this project, treat **[github.com/basarsy/MegaLOD](https://github.com/basarsy/MegaLOD)** as the source of truth you clone and branch from.
+- **CI:** On push/PR, GitHub Actions runs Turtle parsing on `metadata-schemes/` and `ves/`, and SHACL validation of sample graphs against `AddTriplestore/asset/shacl-v1.1/shacl.ttl` (`scripts/validate_turtle.py`, `scripts/validate_shacl_samples.py`).
 
 ## Getting Started
 

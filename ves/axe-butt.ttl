@@ -9,7 +9,7 @@
     skos:hasTopConcept 
         <https://purl.org/megalod/kos/axe-butt/truncated>,
         <https://purl.org/megalod/kos/axe-butt/rectilinear>,
-         <https://purl.org/megalod/kos/axe-butt/rounded>, ;
+        <https://purl.org/megalod/kos/axe-butt/rounded> ;
     dc:creator "Mariana Curado Malta(INESC TEC, Faculdade de Engenharia, Universidade do Porto, Portugal)" ;
     dc:contributor "João Muralha (CHAM, Faculdade de Ciências Sociais e Humanas, Universidade Nova de Lisboa, Portugal) ";
     dc:date "2025-05-25"^^xsd:date ;

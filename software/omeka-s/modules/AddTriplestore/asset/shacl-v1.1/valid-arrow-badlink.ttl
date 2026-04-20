@@ -37,8 +37,8 @@
     schema:width <https://purl.org/megalod/typometry/ah-002-width> ;
     schema:depth <https://purl.org/megalod/typometry/ah-002-depth> ;
     schema:weight <https://purl.org/megalod/weight/ah-002> ;
-    excav:elongationIndex <https://purl.org/megalod/kos/MegaLOD-IndexElongation/Elongated> ;
-    excav:thicknessIndex <https://purl.org/megalod/kos/MegaLOD-IndexThickness/Medium> ;
+    excav:elongationIndex <https://purl.org/megalod/kos/MegaLOD-IndexElongation/elongated> ;
+    excav:thicknessIndex <https://purl.org/megalod/kos/MegaLOD-IndexThickness/medium> ;
     excav:foundInLocation <https://purl.org/megalod/location/alto-castelinho> ;
     excav:foundInSquare <https://purl.org/megalod/square/B1> ;
     ah:shape <https://purl.org/megalod/kos/ah-shape/stemmed> ;

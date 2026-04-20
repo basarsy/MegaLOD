@@ -40,8 +40,8 @@
     schema:width <https://purl.org/megalod/3440/item/ah-001/typometry/ah-057-width> ;
     schema:depth <https://purl.org/megalod/3440/item/ah-001/typometry/ah-057-depth> ;
     schema:weight <https://purl.org/megalod/3440/item/ah-001/weight/ah-057-weight> ;
-    excav:elongationIndex <https://purl.org/megalod/kos/MegaLOD-IndexElongation/Elongated> ;
-    excav:thicknessIndex <https://purl.org/megalod/kos/MegaLOD-IndexThickness/Medium> ;
+    excav:elongationIndex <https://purl.org/megalod/kos/MegaLOD-IndexElongation/elongated> ;
+    excav:thicknessIndex <https://purl.org/megalod/kos/MegaLOD-IndexThickness/medium> ;
     excav:hasCoordinatesInSquare <https://purl.org/megalod/3440/item/ah-001/coordinates/ah-057-coordinates> ;
     dbo:Annotation "Large, stemmed arrowhead with bifacial retouch"^^xsd:literal ;
     excav:foundInSquare <https://purl.org/megalod/3440/excavation/ALC-2011/square/A1> ;

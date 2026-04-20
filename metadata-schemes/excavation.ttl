@@ -33,7 +33,7 @@ excav:Excavation
 excav:Archaeologist
 	a rdfs:Class;
 	rdfs:comment "This Class represents the Archaeologist in charge of the excavation."@en;
-	rdfs:label "Arqueologist"@en;
+	rdfs:label "Archaeologist"@en;
  	owl:equivalentClass crm:E21_Person;
 	rdfs:subClassOf foaf:Person .
 
@@ -65,8 +65,8 @@ excav:foundInSquare
 
 excav:Location
 	a rdfs:Class;
-	rdfs:comment "The Location of the Exacavation."@en;
-	rdfs:label "The Location of the Exacavation."@en;
+	rdfs:comment "The Location of the Excavation."@en;
+	rdfs:label "The Location of the Excavation."@en;
  	rdfs:subClassOf dbo:Place .
 
 excav:GPSCoordinates
@@ -77,8 +77,8 @@ excav:GPSCoordinates
 
 excav:EncounterEvent
 	a rdfs:Class;
-	rdfs:comment "An Encounter Event on the Exacavation."@en;
-	rdfs:label "An Encounter Event on the Exacavation."@en;
+	rdfs:comment "An Encounter Event on the Excavation."@en;
+	rdfs:label "An Encounter Event on the Excavation."@en;
  	rdfs:subClassOf crmsci:S19_Encounter_Event .
 
 excav:StratigraphicVolumeUnit
@@ -235,7 +235,7 @@ excav:elongationIndex
 
 excav:thicknessIndex
 	a rdf:Property,	owl:DataProperty;
-	rdfs:comment "The thickness index of the item. Use a URI of the term in the controlled vocabulary MegaLOD-IndexThicknessn"@en;
+	rdfs:comment "The thickness index of the item. Use a URI of the term in the controlled vocabulary MegaLOD-IndexThickness"@en;
 	rdfs:comment "O índice the Espessura do Item. Usar o URI do termno correspondente no vocabulário controlado MegaLOD-IndexThickness"@en;
 	rdfs:label "Thickness Index."@en;
         rdfs:label "Índice de Espessura ."@en;

@@ -20,7 +20,7 @@
 # MegaLOD SHACL Shapes - Main Container Shape
 
 <https://purl.org/megalod/shapes/MegaLOD-Shapes> a sh:NodeShape ;
-    sh:targetClass excav:Excavation, excav:Location, excav:GPSCoordinates, 
+    sh:targetClass excav:Excavation, excav:Location, excav:GPSCoordinates,
                    excav:Archaeologist, excav:Context, excav:StratigraphicVolumeUnit,
                    excav:TimeLine, excav:Instant, excav:Square, excav:EncounterEvent,
                    excav:Item, excav:Coordinates, excav:TypometryValue,
@@ -36,7 +36,7 @@
     sh:property [
         sh:path dct:identifier ;
         sh:name "Acronym" ;
-        sh:datatype xsd:literal ;
+        sh:nodeKind sh:Literal ;
         sh:minCount 1 ;
         sh:maxCount 1 ;
     ] ;
@@ -88,7 +88,7 @@
     sh:property [
         sh:path dbo:informationName ;
         sh:name "Name of the Location" ;
-        sh:datatype xsd:literal ;
+        sh:nodeKind sh:Literal ;
         sh:minCount 0 ;
         sh:maxCount 1 ;
     ] ;
@@ -140,7 +140,7 @@
     sh:property [
         sh:path foaf:name ;
         sh:name "Name" ;
-        sh:datatype xsd:literal ;
+        sh:nodeKind sh:Literal ;
         sh:minCount 0 ;
         sh:maxCount 1 ;
     ] ;
@@ -158,7 +158,7 @@
     sh:property [
         sh:path dct:identifier ;
         sh:name "ID" ;
-        sh:datatype xsd:literal ;
+        sh:nodeKind sh:Literal ;
         sh:minCount 1 ;
         sh:maxCount 1 ;
     ] ;
@@ -176,14 +176,14 @@
     sh:property [
         sh:path dct:identifier ;
         sh:name "ID" ;
-        sh:datatype xsd:literal ;
+        sh:nodeKind sh:Literal ;
         sh:minCount 1 ;
         sh:maxCount 1 ;
     ] ;
     sh:property [
         sh:path dct:description ;
         sh:name "Description" ;
-        sh:datatype xsd:literal ;
+        sh:nodeKind sh:Literal ;
         sh:minCount 0 ;
         sh:maxCount 1 ;
     ] ;
@@ -244,7 +244,7 @@
     sh:property [
         sh:path dct:identifier ;
         sh:name "ID" ;
-        sh:datatype xsd:literal ;
+        sh:nodeKind sh:Literal ;
         sh:minCount 1 ;
         sh:maxCount 1 ;
     ] ;
@@ -270,7 +270,7 @@
     sh:property [
         sh:path dct:date ;
         sh:name "Date" ;
-        sh:datatype xsd:literal ;
+        sh:nodeKind sh:Literal ;
         sh:minCount 0 ;
         sh:maxCount 1 ;
     ] ;
@@ -309,7 +309,7 @@
     sh:property [
         sh:path dct:identifier ;
         sh:name "InventoryID" ;
-        sh:datatype xsd:literal ;
+        sh:nodeKind sh:Literal ;
         sh:minCount 1 ;
         sh:maxCount 1 ;
     ] ;
@@ -322,7 +322,7 @@
     sh:property [
         sh:path dbo:Annotation ;
         sh:name "Observation details of the Item" ;
-        sh:datatype xsd:literal ;
+        sh:nodeKind sh:Literal ;
         sh:minCount 0 ;
     ] ;
     sh:property [

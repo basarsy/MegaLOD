@@ -1,0 +1,27 @@
+name: RDF validation
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master, develop]
+  workflow_dispatch:
+
+jobs:
+  turtle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install rdflib
+        run: pip install -r scripts/requirements-rdf.txt
+
+      - name: Parse canonical Turtle
+        run: python3 scripts/validate_turtle.py
+
+      - name: SHACL (sample graphs vs module shapes)
+        run: python3 scripts/validate_shacl_samples.py

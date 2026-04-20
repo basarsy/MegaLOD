@@ -30,7 +30,7 @@ ah:Morphology
 	a rdfs:Class;
 	rdfs:comment "Morphology of the arrowhead."@en ;
 	rdfs:comment "Morphologia da Ponta de Seta."@pt ;
-	rdfs:label "Morphoplogy"@en ;
+	rdfs:label "Morphology"@en ;
 	rdfs:label "Morfologia"@pt .
 
 ah:Chipping

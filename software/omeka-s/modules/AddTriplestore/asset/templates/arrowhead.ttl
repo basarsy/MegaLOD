@@ -38,8 +38,8 @@
     schema:width <https://purl.org/megalod/typometry/ah-057-width> ;
     schema:depth <https://purl.org/megalod/typometry/ah-057-depth> ;
     schema:weight <https://purl.org/megalod/weight/ah-057-weight> ;
-    excav:elongationIndex <https://purl.org/megalod/kos/MegaLOD-IndexElongation/Elongated> ;
-    excav:thicknessIndex <https://purl.org/megalod/kos/MegaLOD-IndexThickness/Medium> ;
+    excav:elongationIndex <https://purl.org/megalod/kos/MegaLOD-IndexElongation/elongated> ;
+    excav:thicknessIndex <https://purl.org/megalod/kos/MegaLOD-IndexThickness/medium> ;
     excav:foundInSquare <https://purl.org/megalod/square/A1> ;
     ah:shape <https://purl.org/megalod/kos/ah-shape/stemmed> ;
     crm:E55_Type true ;

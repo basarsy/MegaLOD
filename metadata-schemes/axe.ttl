@@ -7,13 +7,13 @@
 @prefix voaf: <http://purl.org/vocommons/voaf#> .
 @prefix vann: <http://purl.org/vocab/vann/> .
 @prefix wdrs: <http://www.w3.org/2007/05/powder-s#> .
-@prefix excav: <https://purl.org/megalod/ms/excav/> .
+@prefix excav: <https://purl.org/megalod/ms/excavation/> .
 @prefix axe: <https://purl.org/megalod/ms/axe/> .
 
 
 # Metadata #
 
-<http://purl.org/megalod/ms/axe/> a voaf:Vocabulary, owl:Ontology;
+<https://purl.org/megalod/ms/axe/> a voaf:Vocabulary, owl:Ontology;
 
   voaf:classNumber 1 ;
   voaf:propertyNumber 6 ;
@@ -29,9 +29,9 @@
 	dct:description "This is the RDF encoding of the data Model for the description of the Chalcolithic and Early/Middle Bronze Age axes .";
 	dct:modified "2025-05-11"^^xsd:date;
 	vann:preferredNamespacePrefix "axe";
-	vann:preferredNamespaceUri "http://www.purl.org/megalod/ms/axe/";
+	vann:preferredNamespaceUri "https://purl.org/megalod/ms/axe/";
 	rdfs:comment "This file specifies the set of RDF classes and properties used in the Axes metadata scheme"@en;
-	wdrs:describedby <http://purl.org/megalod/ms/axe/> .
+	wdrs:describedby <https://purl.org/megalod/ms/axe/> .
 
 
 
@@ -46,7 +46,7 @@ axe:Axe
 	rdfs:subClassOf excav:Item;
         rdfs:label "Axe"@en;
 	rdfs:label "Machado"@pt ;
-	redf:label "Biface"@fr.
+	rdfs:label "Biface"@fr.
 
 
 
@@ -124,7 +124,7 @@ axe:tracesOfUse
         rdfs:domain axe:Axe;
 	rdfs:range xsd:anyURI.
 
-axe:tracesOReuUse
+axe:tracesOfReuse
 	a rdf:Property,	owl:DataProperty;
         rdfs:comment "The traces of Reuse of the axe.  Use a term of the controlled vocabulary  axe-tracesOfReuse"@en;
 	rdfs:label "The traces of use of the axe. "@en;

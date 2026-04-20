@@ -21,7 +21,7 @@
 <https://purl.org/megalod/kos/MegaLOD-BCAD/BC> a skos:Concept ;
     skos:prefLabel "BC - Before Christ"@en ;
     skos:prefLabel "a.C. - Antes de Cristo"@pt ;
-    skos:prefLabel "Avant Jésus-Christ - av.J.-C."@;
+    skos:prefLabel "Avant Jésus-Christ - av.J.-C."@fr ;
     skos:inScheme <https://purl.org/megalod/kos/MegaLOD-BCAD>;
     skos:topConceptOf <https://purl.org/megalod/kos/MegaLOD-BCAD>.
 

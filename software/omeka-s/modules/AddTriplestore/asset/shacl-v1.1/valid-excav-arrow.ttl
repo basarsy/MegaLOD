@@ -114,8 +114,8 @@
     schema:width <https://megalod.example.org/typometry/ah-001-width> ;
     schema:depth <https://megalod.example.org/typometry/ah-001-thickness> ;
     schema:weight <https://megalod.example.org/weight/ah-001-weight> ;
-    excav:elongationIndex <https://purl.org/megalod/kos/MegaLOD-IndexElongation/Medium> ;
-    excav:thicknessIndex <https://purl.org/megalod/kos/MegaLOD-IndexThickness/Thin> ;
+    excav:elongationIndex <https://purl.org/megalod/kos/MegaLOD-IndexElongation/medium> ;
+    excav:thicknessIndex <https://purl.org/megalod/kos/MegaLOD-IndexThickness/thin> ;
     dul:hasLocation <https://megalod.example.org/location/alto-castelinho> ;
     excav:foundInSquare <https://megalod.example.org/square/A1> ;
     crmsci:O19i_was_object_encountered_through <https://megalod.example.org/encounter/enc-001> ;
@@ -221,8 +221,8 @@
     schema:width <https://megalod.example.org/typometry/ah-002-width> ;
     schema:depth <https://megalod.example.org/typometry/ah-002-thickness> ;
     schema:weight <https://megalod.example.org/weight/ah-002-weight> ;
-    excav:elongationIndex <https://purl.org/megalod/kos/MegaLOD-IndexElongation/Elongated> ;
-    excav:thicknessIndex <https://purl.org/megalod/kos/MegaLOD-IndexThickness/Medium> ;
+    excav:elongationIndex <https://purl.org/megalod/kos/MegaLOD-IndexElongation/elongated> ;
+    excav:thicknessIndex <https://purl.org/megalod/kos/MegaLOD-IndexThickness/medium> ;
     dul:hasLocation <https://megalod.example.org/location/alto-castelinho> ;
     excav:foundInSquare <https://megalod.example.org/square/A2> ;
     crmsci:O19i_was_object_encountered_through <https://megalod.example.org/encounter/enc-002> ;

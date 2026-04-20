@@ -52,8 +52,8 @@
     ah:hasBaseLength <https://purl.org/megalod/example/typometry/AH-003-baseLength>;
     
     # Classification indices
-    excav:elongationIndex <https://purl.org/megalod/kos/MegaLOD-IndexElongation/Elongated>;
-    excav:thicknessIndex <https://purl.org/megalod/kos/MegaLOD-IndexThickness/Thin>;
+    excav:elongationIndex <https://purl.org/megalod/kos/MegaLOD-IndexElongation/elongated>;
+    excav:thicknessIndex <https://purl.org/megalod/kos/MegaLOD-IndexThickness/thin>;
     
     # Coordinates within the excavation square
     excav:hasCoordinatesInSquare <https://purl.org/megalod/example/coordinates/AH-003>;

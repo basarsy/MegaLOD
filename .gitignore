@@ -50,7 +50,17 @@ vendor/
 node_modules/
 composer.phar
 
+# === Python (root scripts, local RDF validation) ===
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
 # === Build artifacts ===
 build/
 .sass-cache
 .php_cs.cache
+.php-cs-fixer.cache

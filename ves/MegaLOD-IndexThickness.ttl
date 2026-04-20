@@ -19,14 +19,14 @@
     dc:title "A taxonomy to categorise Thickness Indexes of lithic Items of the Paleolithic"@en.
 
 
-<https://purl.org/megalod/kos/MegaLOD-IndexThickness/Thin> a skos:Concept ;
+<https://purl.org/megalod/kos/MegaLOD-IndexThickness/thin> a skos:Concept ;
     skos:prefLabel "Thin"@en ;
     skos:prefLabel "Abatido"@pt ;
     skos:prefLabel "Aminci"@fr ;
     skos:inScheme <https://purl.org/megalod/kos/MegaLOD-IndexThickness>;
     skos:topConceptOf <https://purl.org/megalod/kos/MegaLOD-IndexThickness>.
 
-<https://purl.org/megalod/kos/MegaLOD-IndexThickness/Medium> a skos:Concept ;
+<https://purl.org/megalod/kos/MegaLOD-IndexThickness/medium> a skos:Concept ;
     skos:prefLabel "Medium"@en ;
     skos:prefLabel "Mediano"@pt ;
     skos:prefLabel "Moyen"@fr ;
@@ -34,7 +34,7 @@
     skos:topConceptOf <https://purl.org/megalod/kos/MegaLOD-IndexThickness>.
 
 
-<https://purl.org/megalod/kos/MegaLOD-IndexThickness/Thick> a skos:Concept ;
+<https://purl.org/megalod/kos/MegaLOD-IndexThickness/thick> a skos:Concept ;
     skos:prefLabel "Thick"@en ;
     skos:prefLabel "Alteado"@pt ;
     skos:prefLabel "Épais"@fr ;

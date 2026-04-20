@@ -7,25 +7,25 @@
 @prefix dc: <http://purl.org/dc/terms/> .
 
 <https://purl.org/megalod/kos/MegaLOD-IndexElongation> a skos:ConceptScheme, prov:Entity ;
-    skos:prefLabel "The Elogation Index of the Item - used as controlled term in excav:elongationIndex"@en;
+    skos:prefLabel "The Elongation Index of the Item - used as controlled term in excav:elongationIndex"@en;
     skos:hasTopConcept 
         <https://purl.org/megalod/kos/MegaLOD-IndexElongation/elongated>,
         <https://purl.org/megalod/kos/MegaLOD-IndexElongation/medium>,
         <https://purl.org/megalod/kos/MegaLOD-IndexElongation/short>;
     dc:creator "Mariana Curado Malta(INESC TEC, Faculdade de Engenharia, Universidade do Porto, Portugal)" ;
     dc:contributor "João Muralha (CHAM, Faculdade de Ciências Sociais e Humanas, Universidade Nova de Lisboa, Portugal) ";
-    dc:date "2025-05-213"^^xsd:date ;
-    dc:title "A taxonomy to categorise Thickness Indexes of lithic Items of the Palaeolithic"@en.
+    dc:date "2025-05-13"^^xsd:date ;
+    dc:title "A taxonomy to categorise elongation indexes of lithic items (Palaeolithic)"@en.
 
 
-<https://purl.org/megalod/kos/MegaLOD-IndexElongation/Elongated> a skos:Concept ;
+<https://purl.org/megalod/kos/MegaLOD-IndexElongation/elongated> a skos:Concept ;
     skos:prefLabel "Elongated"@en ;
     skos:prefLabel "Alongado"@pt ;
     skos:prefLabel "Allongé"@fr ;
     skos:inScheme <https://purl.org/megalod/kos/MegaLOD-IndexElongation>;
     skos:topConceptOf <https://purl.org/megalod/kos/MegaLOD-IndexElongation>.
 
-<https://purl.org/megalod/kos/MegaLOD-IndexElongation/Medium> a skos:Concept ;
+<https://purl.org/megalod/kos/MegaLOD-IndexElongation/medium> a skos:Concept ;
     skos:prefLabel "Medium"@en ;
     skos:prefLabel "Mediano"@pt ;
     skos:prefLabel "Intermédiaire"@fr ;
@@ -33,7 +33,7 @@
     skos:topConceptOf <https://purl.org/megalod/kos/MegaLOD-IndexElongation>.
 
 
-<https://purl.org/megalod/kos/MegaLOD-IndexElongation/Short> a skos:Concept ;
+<https://purl.org/megalod/kos/MegaLOD-IndexElongation/short> a skos:Concept ;
     skos:prefLabel "Short"@en ;
     skos:prefLabel "Curto"@pt ;
     skos:prefLabel "Court"@fr ;
