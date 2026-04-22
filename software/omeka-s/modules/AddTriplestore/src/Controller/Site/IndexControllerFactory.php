@@ -2,10 +2,15 @@
 
 namespace AddTriplestore\Controller\Site;
 
+use AddTriplestore\Service\GraphDbHttpService;
+use AddTriplestore\Service\MegalodConfig;
+use AddTriplestore\Service\OmekaApiCredentialService;
+use AddTriplestore\Service\Ttl\TtlUriHelper;
+use AddTriplestore\Service\Ttl\TtlUriNormalizer;
 use Interop\Container\ContainerInterface;
 use Laminas\ServiceManager\Factory\FactoryInterface;
 use Laminas\Http\Client;
-use Laminas\Router\RouteStackInterface; 
+use Laminas\Router\RouteStackInterface;
 
 class IndexControllerFactory implements FactoryInterface
 {
@@ -13,102 +18,20 @@ class IndexControllerFactory implements FactoryInterface
     {
         $httpClient = new Client();
         $router = $container->get(RouteStackInterface::class);
-        $megalodConfig = $this->loadMegalodConfig();
-        return new IndexController($router, $httpClient, $megalodConfig); 
-    }
+        $megalodConfig = $container->get(MegalodConfig::class);
+        $graphDbHttp = $container->get(GraphDbHttpService::class);
+        $omekaApiCredentials = $container->get(OmekaApiCredentialService::class);
+        $ttlUriHelper = $container->get(TtlUriHelper::class);
+        $ttlUriNormalizer = $container->get(TtlUriNormalizer::class);
 
-    /**
-     * Load MegaLOD connection and URI configuration.
-     *
-     * Resolution order per key: graphdb.config.php value -> env var -> throw.
-     *
-     * @return array{graphdb_base_url: string, graphdb_repository: string,
-     *               megalod_public_base_uri: string, megalod_local_base_uri: string,
-     *               graphdb_workbench_url: string}
-     * @throws \RuntimeException When required configuration is missing.
-     */
-    private function loadMegalodConfig(): array
-    {
-        $configFile = dirname(__DIR__, 3) . '/config/graphdb.config.php';
-        $fileConfig = [];
-        if (file_exists($configFile)) {
-            $loaded = include $configFile;
-            if (is_array($loaded)) {
-                $fileConfig = $loaded;
-            }
-        }
-
-        $graphdbBaseUrl = $this->resolveValue(
-            $fileConfig, 'graphdb_base_url', 'GRAPHDB_BASE_URL'
+        return new IndexController(
+            $router,
+            $httpClient,
+            $megalodConfig,
+            $graphDbHttp,
+            $omekaApiCredentials,
+            $ttlUriHelper,
+            $ttlUriNormalizer
         );
-        if (empty($graphdbBaseUrl)) {
-            $host = getenv('GRAPHDB_HOST');
-            $port = getenv('GRAPHDB_PORT');
-            if ($host && $port) {
-                $graphdbBaseUrl = "http://$host:$port";
-            }
-        }
-        if (empty($graphdbBaseUrl)) {
-            throw new \RuntimeException(
-                'GraphDB connection is not configured. '
-                . 'Set GRAPHDB_BASE_URL (or GRAPHDB_HOST + GRAPHDB_PORT) environment variables, '
-                . 'or configure graphdb_base_url in modules/AddTriplestore/config/graphdb.config.php.'
-            );
-        }
-
-        $graphdbRepo = $this->resolveValue(
-            $fileConfig, 'graphdb_repository', 'GRAPHDB_REPOSITORY'
-        );
-        if (empty($graphdbRepo)) {
-            throw new \RuntimeException(
-                'GraphDB repository is not configured. '
-                . 'Set GRAPHDB_REPOSITORY environment variable '
-                . 'or configure graphdb_repository in graphdb.config.php.'
-            );
-        }
-
-        $publicBaseUri = $this->resolveValue(
-            $fileConfig, 'megalod_public_base_uri', 'MEGALOD_PUBLIC_BASE_URI'
-        ) ?: 'https://purl.org/megalod/';
-
-        $localBaseUri = $this->resolveValue(
-            $fileConfig, 'megalod_local_base_uri', 'MEGALOD_LOCAL_BASE_URI'
-        );
-        if (empty($localBaseUri)) {
-            throw new \RuntimeException(
-                'MegaLOD local base URI is not configured. '
-                . 'Set MEGALOD_LOCAL_BASE_URI environment variable '
-                . 'or configure megalod_local_base_uri in graphdb.config.php.'
-            );
-        }
-
-        $workbenchUrl = $this->resolveValue(
-            $fileConfig, 'graphdb_workbench_url', 'GRAPHDB_WORKBENCH_URL'
-        ) ?: rtrim($graphdbBaseUrl, '/') . '/';
-
-        return [
-            'graphdb_base_url'        => rtrim($graphdbBaseUrl, '/'),
-            'graphdb_repository'      => $graphdbRepo,
-            'megalod_public_base_uri' => rtrim($publicBaseUri, '/') . '/',
-            'megalod_local_base_uri'  => rtrim($localBaseUri, '/') . '/',
-            'graphdb_workbench_url'   => $workbenchUrl,
-        ];
-    }
-
-    /**
-     * Resolve a configuration value from file config, then env var.
-     * Returns null if both are empty or set to the CHANGE_ME sentinel.
-     */
-    private function resolveValue(array $fileConfig, string $key, string $envVar): ?string
-    {
-        $value = $fileConfig[$key] ?? null;
-        if (!empty($value) && $value !== 'CHANGE_ME') {
-            return $value;
-        }
-        $value = getenv($envVar) ?: null;
-        if (!empty($value) && $value !== 'CHANGE_ME') {
-            return $value;
-        }
-        return null;
     }
 }

@@ -1,5 +1,15 @@
 <?php
 return [
+    'service_manager' => [
+        'factories' => [
+            \AddTriplestore\Service\MegalodConfig::class => \AddTriplestore\Service\MegalodConfigFactory::class,
+            \AddTriplestore\Service\GraphDbCredentialService::class => \AddTriplestore\Service\GraphDbCredentialServiceFactory::class,
+            \AddTriplestore\Service\OmekaApiCredentialService::class => \AddTriplestore\Service\OmekaApiCredentialServiceFactory::class,
+            \AddTriplestore\Service\GraphDbHttpService::class => \AddTriplestore\Service\GraphDbHttpServiceFactory::class,
+            \AddTriplestore\Service\Ttl\TtlUriHelper::class => \AddTriplestore\Service\Ttl\TtlUriHelperFactory::class,
+            \AddTriplestore\Service\Ttl\TtlUriNormalizer::class => \AddTriplestore\Service\Ttl\TtlUriNormalizerFactory::class,
+        ],
+    ],
     'controllers' => [
         'factories' => [
             'AddTriplestore\Controller\Site\Index' => 'AddTriplestore\Controller\Site\IndexControllerFactory',

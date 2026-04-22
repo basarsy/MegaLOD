@@ -1,6 +1,6 @@
 # MegaLOD namespace policy (canonical)
 
-This document locks **IRI identity** for Issue 5 (ontology / RDF quality). RDF 1.1 compares IRIs by string equality; `http://` and `https://` are different resources unless you publish explicit same-As or redirects.
+This document locks **IRI identity**. RDF 1.1 compares IRIs by string equality; `http://` and `https://` are different resources unless you publish explicit same-As or redirects.
 
 ## Rules
 

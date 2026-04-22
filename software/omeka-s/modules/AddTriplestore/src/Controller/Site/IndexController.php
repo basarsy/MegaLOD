@@ -4,11 +4,14 @@ namespace AddTriplestore\Controller\Site;
 
 require 'vendor/autoload.php';
 
+use AddTriplestore\Service\GraphDbHttpService;
+use AddTriplestore\Service\MegalodConfig;
+use AddTriplestore\Service\OmekaApiCredentialService;
+use AddTriplestore\Service\Ttl\TtlUriHelper;
+use AddTriplestore\Service\Ttl\TtlUriNormalizer;
 use Laminas\Mvc\Controller\AbstractActionController;
 use Laminas\View\Model\ViewModel;
 use Laminas\Http\Client;
-use Laminas\Log\Logger;
-use Laminas\Log\Writer\Stream;
 use EasyRdf\Graph;
 use Laminas\Form\FormInterface;
 use Laminas\Router\RouteStackInterface;
@@ -25,6 +28,18 @@ class IndexController extends AbstractActionController
     private $router;
     private $httpClient;
 
+    /** @var GraphDbHttpService */
+    private $graphDbHttpService;
+
+    /** @var OmekaApiCredentialService */
+    private $omekaApiCredentialService;
+
+    /** @var TtlUriHelper */
+    private $ttlUriHelper;
+
+    /** @var TtlUriNormalizer */
+    private $ttlUriNormalizer;
+
     private $uploadedFiles = null;
 
     private $excavationData = null;
@@ -36,18 +51,27 @@ class IndexController extends AbstractActionController
     private $csrfValidator = null;
         
 
-    public function __construct(RouteStackInterface $router, Client $httpClient, array $megalodConfig)
-    {
+    public function __construct(
+        RouteStackInterface $router,
+        Client $httpClient,
+        MegalodConfig $megalodConfig,
+        GraphDbHttpService $graphDbHttpService,
+        OmekaApiCredentialService $omekaApiCredentialService,
+        TtlUriHelper $ttlUriHelper,
+        TtlUriNormalizer $ttlUriNormalizer
+    ) {
         $this->router = $router;
         $this->httpClient = $httpClient;
+        $this->graphDbHttpService = $graphDbHttpService;
+        $this->omekaApiCredentialService = $omekaApiCredentialService;
+        $this->ttlUriHelper = $ttlUriHelper;
+        $this->ttlUriNormalizer = $ttlUriNormalizer;
 
-        $base = $megalodConfig['graphdb_base_url'];
-        $repo = $megalodConfig['graphdb_repository'];
-        $this->graphdbEndpoint      = "$base/repositories/$repo/rdf-graphs/service";
-        $this->graphdbQueryEndpoint = "$base/repositories/$repo";
-        $this->baseDataGraphUri     = $megalodConfig['megalod_public_base_uri'];
-        $this->localBaseUri         = $megalodConfig['megalod_local_base_uri'];
-        $this->graphdbWorkbenchUrl  = $megalodConfig['graphdb_workbench_url'];
+        $this->graphdbEndpoint = $megalodConfig->getGraphdbRdfGraphsServiceUrl();
+        $this->graphdbQueryEndpoint = $megalodConfig->getGraphdbQueryEndpoint();
+        $this->baseDataGraphUri = $megalodConfig->getMegalodPublicBaseUri();
+        $this->localBaseUri = $megalodConfig->getMegalodLocalBaseUri();
+        $this->graphdbWorkbenchUrl = $megalodConfig->getGraphdbWorkbenchUrl();
     }
 
 
@@ -1102,7 +1126,7 @@ class IndexController extends AbstractActionController
                 );
             }
 
-            $filename = $this->sanitizeFilename($resource->displayTitle());
+            $filename = $this->ttlUriHelper->sanitizeFilename($resource->displayTitle());
             
             $response = $this->getResponse();
             $response->getHeaders()->addHeaderLine('Content-Type', 'text/turtle; charset=UTF-8');
@@ -1815,60 +1839,6 @@ class IndexController extends AbstractActionController
 
     // ================== UTILITY METHODS ==================
 
-    
-
-    /**
-     * Returns a string containing the necessary RDF prefixes for TTL files.
-     * This method is used to generate the header for TTL files to ensure they are properly formatted with the required namespaces.
-     * @return string A string of RDF prefixes in Turtle format.
-     */
-    private function getTtlPrefixes() 
-    {
-        return "@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .\n" .
-            "@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n" .
-            "@prefix sh: <http://www.w3.org/ns/shacl#> .\n" .
-            "@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .\n" .
-            "@prefix skos: <http://www.w3.org/2004/02/skos/core#> .\n" .
-            "@prefix dct: <http://purl.org/dc/terms/> .\n" .
-            "@prefix foaf: <http://xmlns.com/foaf/0.1/> .\n" .
-            "@prefix dbo: <http://dbpedia.org/ontology/> .\n" .
-            "@prefix crm: <http://www.cidoc-crm.org/cidoc-crm/> .\n" .
-            "@prefix crmsci: <http://cidoc-crm.org/extensions/crmsci/> .\n" .
-            "@prefix crmarchaeo: <http://www.cidoc-crm.org/extensions/crmarchaeo/> .\n" .
-            "@prefix edm: <http://www.europeana.eu/schemas/edm/> .\n" .
-            "@prefix geo: <http://www.w3.org/2003/01/geo/wgs84_pos#> .\n" .
-            "@prefix time: <http://www.w3.org/2006/time#> .\n" .
-            "@prefix schema: <http://schema.org/> .\n" .
-            "@prefix ah: <https://purl.org/megalod/ms/ah/> .\n" .
-            "@prefix excav: <https://purl.org/megalod/ms/excavation/> .\n" .
-            "@prefix dul: <http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#> .\n";
-    }
-    
- 
-/**
- * Sanitize a string for use in a URI.
- * This method processes a string to make it safe for use in a URI by:
- * - Extracting text before any parentheses (if present)
- * - Converting the string to lowercase
- * - Removing spaces and special characters (except hyphens)
- * * @param string $value The input string to sanitize
- * @return string The sanitized string, suitable for use in a URI
- */
-private function sanitizeForUri($value) {
-    // Extract text before parentheses if present
-    if (preg_match('/^([^(]+)/', $value, $matches)) {
-        $value = trim($matches[1]);
-    }
-     
-    // Convert to lowercase and remove spaces and special characters
-    $value = preg_replace('/[\s()]+/', '', $value);
-    
-    return $value;
-}
-
-    
-
-
 /**
  * This method checks the user's permissions against the ACL service to determine if they can create the specfied resource type.
  *
@@ -1960,34 +1930,6 @@ private function processArchaeologistDataFromForm($formData)
 
 
 /**
- * Creates a URL-friendly slug from a given string.
- * This method converts the string to lowercase, replaces spaces and special characters with hyphens,
- * and trims leading/trailing hyphens.
- * If the resulting slug is empty, it defaults to 'unknown'.
- * @param string $string The input string to convert into a slug
- * @return string The generated URL slug
- */
-private function createUrlSlug($string) {
-    // Convert to lowercase
-    $slug = strtolower($string);
-    
-    // Replace spaces and special characters with hyphens
-    $slug = preg_replace('/[^a-z0-9]+/', '-', $slug);
-    
-    // Remove leading/trailing hyphens
-    $slug = trim($slug, '-');
-    
-    // Handle empty slugs
-    if (empty($slug)) {
-        $slug = 'unknown';
-    }
-    
-    return $slug;
-}
-
-
-
-/**
  * Processes archaeologist data for Turtle (TTL) generation.
  * This method checks if the archaeologist is existing or new and generates a URI accordingly.
  * @param array $archaeologistData The processed archaeologist data containing 'existing', 'item_id', and 'name'
@@ -2001,7 +1943,7 @@ private function processArchaeologistForTtl($archaeologistData, $baseUri)
         return "$baseUri/archaeologist/item-" . $archaeologistData['item_id'];
     } elseif (!empty($archaeologistData['name'])) {
         // Create new archaeologist with new URI
-        $nameSlug = $this->createUrlSlug($archaeologistData['name']);
+        $nameSlug = $this->ttlUriHelper->createUrlSlug($archaeologistData['name']);
         return "$baseUri/archaeologist/$nameSlug";
     }
     
@@ -2040,7 +1982,7 @@ private function generateContextTtl($contextUri, $context, $allEntities, $baseUr
             
             if ($contextFound && isset($allEntities['svus'][$relationship['svu']])) {
                 $svu = $allEntities['svus'][$relationship['svu']];
-                $svuSlug = $this->createUrlSlug($svu['svu_id']);
+                $svuSlug = $this->ttlUriHelper->createUrlSlug($svu['svu_id']);
                 $svuUri = "$baseUri/svu/$svuSlug";
                 $ttl .= "    excav:hasSVU <$svuUri> ;\n";
             }
@@ -2091,7 +2033,7 @@ private function generateEnhancedLocationTtl($locationUri, $gpsUri, $excavationD
     
     // Add district, parish, and country
     if (!empty($excavationData['district'])) {
-        $districtSlug = $this->createUrlSlug($excavationData['district']);
+        $districtSlug = $this->ttlUriHelper->createUrlSlug($excavationData['district']);
         $districtUri = "http://dbpedia.org/resource/$districtSlug";
         $ttl .= "    dbo:district <$districtUri> ;\n";
         $entitiesToDeclare['district'] = [
@@ -2101,7 +2043,7 @@ private function generateEnhancedLocationTtl($locationUri, $gpsUri, $excavationD
     }
     
     if (!empty($excavationData['parish'])) {
-        $parishSlug = $this->createUrlSlug($excavationData['parish']);
+        $parishSlug = $this->ttlUriHelper->createUrlSlug($excavationData['parish']);
         $parishUri = "http://dbpedia.org/resource/$parishSlug";
         $ttl .= "    dbo:parish <$parishUri> ;\n";
         $entitiesToDeclare['parish'] = [
@@ -2155,322 +2097,20 @@ private function generateEnhancedLocationTtl($locationUri, $gpsUri, $excavationD
 
 /**
  * Normalize URIs in TTL data for local use.
- * 
- * Converts canonical public-base URIs to local-base URIs using item set ID and excavation identifier.
- * Preserves KOS URIs.
+ *
  * @param string $ttlData The Turtle data containing URIs to normalize
- * @param string $itemSetId The ID of the item set to use for normalization
+ * @param mixed $itemSetId The ID of the item set to use for normalization
  * @return string The modified Turtle data with normalized URIs
  */
-private function normalizeUris($ttlData, $itemSetId) {
-   
-
-    if (!$itemSetId) {
-   
-        return $ttlData;
-    }
-    
-    // extract the main excavation identifier
-    $excavationIdentifier = null;
-   
-    $excavationIdentifier = $this->getExcavationIdentifierFromItemSet($itemSetId);
-    if ($excavationIdentifier == null){
-        if (preg_match('/dct:identifier\s+"([^"]+)"/i', $ttlData, $matches)) {
-            $excavationIdentifier = $matches[1]; 
-   
-        } else {
-            $excavationIdentifier = "excavation-$itemSetId";
-   
+private function normalizeUris($ttlData, $itemSetId)
+{
+    return $this->ttlUriNormalizer->normalizeUris(
+        $ttlData,
+        $itemSetId,
+        function ($setId) {
+            return $this->getExcavationIdentifierFromItemSet($setId);
         }
-    }
-   
-    
-    $modifiedTtl = $ttlData;
-    $replacements = 0;
-    $escapedBase = preg_quote($this->baseDataGraphUri, '/');
-    
-    // Main excavation URI pattern
-    $modifiedTtl = preg_replace_callback(
-        '/<' . $escapedBase . 'excavation\/([^>]+)>/',
-        function($matches) use ($itemSetId, $excavationIdentifier, &$replacements) {
-            if (strpos($matches[0], '/kos/') !== false) return $matches[0]; 
-            $replacements++;
-   
-            return "<{$this->localBaseUri}$itemSetId/excavation/$excavationIdentifier>";
-        },
-        $modifiedTtl
     );
-    
-    // Location URI pattern
-    $modifiedTtl = preg_replace_callback(
-    '/<' . $escapedBase . '([^\/]+\/)?location\/([^>]+)>/',
-    function($matches) use ($itemSetId, $excavationIdentifier, &$replacements) {
-        if (strpos($matches[0], '/kos/') !== false) return $matches[0]; 
-        $locationId = $matches[2]; 
-        $replacements++;
-        $newUri = "<{$this->localBaseUri}$itemSetId/excavation/$excavationIdentifier/location/$locationId>";
-   
-        return $newUri;
-    },
-    $modifiedTtl
-    );
-        
-        // GPS URI pattern
-        $modifiedTtl = preg_replace_callback(
-            '/<' . $escapedBase . 'gps\/([^>]+)>/',
-            function($matches) use ($itemSetId, $excavationIdentifier, &$replacements) {
-                if (strpos($matches[0], '/kos/') !== false) return $matches[0]; 
-                $gpsId = $matches[1];
-                $replacements++;
-   
-                return "<{$this->localBaseUri}$itemSetId/excavation/$excavationIdentifier/gps/$gpsId>";
-            },
-            $modifiedTtl
-        );
-        
-        // 5. Archaeologist URI pattern
-        $modifiedTtl = preg_replace_callback(
-            '/<' . $escapedBase . 'archaeologist\/([^>]+)>/',
-            function($matches) use ($itemSetId, $excavationIdentifier, &$replacements) {
-                if (strpos($matches[0], '/kos/') !== false) return $matches[0]; 
-                $archaeologistId = $matches[1];
-                $replacements++;
-   
-                return "<{$this->localBaseUri}$itemSetId/excavation/$excavationIdentifier/archaeologist/$archaeologistId>";
-            },
-            $modifiedTtl
-        );
-        
-        // 6. Square URI pattern
-        $modifiedTtl = preg_replace_callback(
-            '/<' . $escapedBase . 'square\/([^>]+)>/',
-            function($matches) use ($itemSetId, $excavationIdentifier, &$replacements) {
-                if (strpos($matches[0], '/kos/') !== false) return $matches[0]; 
-                $squareId = $matches[1];
-                $replacements++;
-   
-                return "<{$this->localBaseUri}$itemSetId/excavation/$excavationIdentifier/square/$squareId>";
-            },
-            $modifiedTtl
-        );
-        
-        // 7. Context URI pattern
-        $modifiedTtl = preg_replace_callback(
-            '/<' . $escapedBase . 'context\/([^>]+)>/',
-            function($matches) use ($itemSetId, $excavationIdentifier, &$replacements) {
-                if (strpos($matches[0], '/kos/') !== false) return $matches[0]; 
-                $contextId = $matches[1];
-                $replacements++;
-   
-                return "<{$this->localBaseUri}$itemSetId/excavation/$excavationIdentifier/context/$contextId>";
-            },
-            $modifiedTtl
-        );
-        
-        // 8. SVU URI pattern
-        $modifiedTtl = preg_replace_callback(
-            '/<' . $escapedBase . 'svu\/([^>]+)>/',
-            function($matches) use ($itemSetId, $excavationIdentifier, &$replacements) {
-                if (strpos($matches[0], '/kos/') !== false) return $matches[0]; 
-                $svuId = $matches[1];
-                $replacements++;
-   
-                return "<{$this->localBaseUri}$itemSetId/excavation/$excavationIdentifier/svu/$svuId>";
-            },
-            $modifiedTtl
-        );
-        
-        // 9. Timeline URI pattern
-        $modifiedTtl = preg_replace_callback(
-            '/<' . $escapedBase . 'timeline\/([^>]+)>/',
-            function($matches) use ($itemSetId, $excavationIdentifier, &$replacements) {
-                if (strpos($matches[0], '/kos/') !== false) return $matches[0]; 
-                $timelineId = $matches[1];
-                $replacements++;
-   
-                return "<{$this->localBaseUri}$itemSetId/excavation/$excavationIdentifier/timeline/$timelineId>";
-            },
-            $modifiedTtl
-        );
-        
-        // 10. Instant URI pattern
-        $modifiedTtl = preg_replace_callback(
-            '/<' . $escapedBase . 'instant\/([^>]+)>/',
-            function($matches) use ($itemSetId, $excavationIdentifier, &$replacements) {
-                if (strpos($matches[0], '/kos/') !== false) return $matches[0]; 
-                $instantId = $matches[1];
-                $replacements++;
-   
-                return "<{$this->localBaseUri}$itemSetId/excavation/$excavationIdentifier/instant/$instantId>";
-            },
-            $modifiedTtl
-        );
-        
-        $modifiedTtl = preg_replace_callback(
-            '/<' . $escapedBase . '[^>]*\/kos\/([^>]+)>/',
-            function($matches) {
-                return "<{$this->baseDataGraphUri}kos/{$matches[1]}>";
-            },
-            $modifiedTtl
-        );
-
-
-        // get the item identifier
-        $itemIdentifier = null;
-        if (preg_match('/dct:identifier\s+"([^"]+)"/i', $modifiedTtl, $matches)) {
-            $itemIdentifier = $matches[1]; 
-   
-        } else {
-            $itemIdentifier = "item-$itemSetId";
-   
-        }
-        
-        $modifiedTtl = preg_replace_callback(
-            '/<' . $escapedBase . 'item\/([^>]+)>/',
-            function($matches) use ($itemSetId, $itemIdentifier, &$replacements) {
-                $replacements++;
-   
-                return "<{$this->localBaseUri}$itemSetId/item/$itemIdentifier>";
-            },
-            $modifiedTtl
-        );
-
-        // Normalize typometry URIs
-        $modifiedTtl = preg_replace_callback(
-            '/<' . $escapedBase . 'typometry\/([^>]+)>/',
-            function($matches) use ($itemSetId, $itemIdentifier, &$replacements) {
-                $typometryId = $matches[1];
-                $replacements++;
-   
-                return "<{$this->localBaseUri}$itemSetId/item/$itemIdentifier/typometry/$typometryId>";
-            },
-            $modifiedTtl
-        );
-        
-        // Normalize coordinates URIs
-        $modifiedTtl = preg_replace_callback(
-            '/<' . $escapedBase . 'coordinates\/([^>]+)>/',
-            function($matches) use ($itemSetId, $itemIdentifier, &$replacements) {
-                $coordinatesId = $matches[1];
-                $replacements++;
-   
-                return "<{$this->localBaseUri}$itemSetId/item/$itemIdentifier/coordinates/$coordinatesId>";
-            },
-            $modifiedTtl
-        );
-
-        // Normalize weight URIs  
-        $modifiedTtl = preg_replace_callback(
-            '/<' . $escapedBase . 'weight\/([^>]+)>/',
-            function($matches) use ($itemSetId, $itemIdentifier, &$replacements) {
-                $weightId = $matches[1];
-                $replacements++;
-   
-                return "<{$this->localBaseUri}$itemSetId/item/$itemIdentifier/weight/$weightId>";
-            },
-            $modifiedTtl
-        );
-        
-        // Normalize morphology URIs
-        $modifiedTtl = preg_replace_callback(
-            '/<' . $escapedBase . 'Morphology\/([^>]+)>/',
-            function($matches) use ($itemSetId, $itemIdentifier, &$replacements) {
-                $morphologyId = $matches[1];
-                $replacements++;
-   
-                return "<{$this->localBaseUri}$itemSetId/item/$itemIdentifier/morphology/$morphologyId>";
-            },
-            $modifiedTtl
-        );
-        
-        // Normalize body length URIs
-        $modifiedTtl = preg_replace_callback(
-            '/<' . $escapedBase . 'BodyLength\/([^>]+)>/',
-            function($matches) use ($itemSetId, $itemIdentifier, &$replacements) {
-                $bodyLengthId = $matches[1];
-                $replacements++;
-   
-                return "<{$this->localBaseUri}$itemSetId/item/$itemIdentifier/bodylength/$bodyLengthId>";
-            },
-            $modifiedTtl
-        );
-        
-        // Normalize base length URIs
-        $modifiedTtl = preg_replace_callback(
-            '/<' . $escapedBase . 'BaseLength\/([^>]+)>/',
-            function($matches) use ($itemSetId, $itemIdentifier, &$replacements) {
-                $baseLengthId = $matches[1];
-                $replacements++; 
-   
-                return "<{$this->localBaseUri}$itemSetId/item/$itemIdentifier/baselength/$baseLengthId>";
-            },
-            $modifiedTtl
-        );
-        
-        // Normalize chipping URIs
-        $modifiedTtl = preg_replace_callback(
-            '/<' . $escapedBase . 'Chipping\/([^>]+)>/',
-            function($matches) use ($itemSetId, $itemIdentifier, &$replacements) {
-                $chippingId = $matches[1];
-                $replacements++;
-   
-                return "<{$this->localBaseUri}$itemSetId/item/$itemIdentifier/chipping/$chippingId>";
-            },
-            $modifiedTtl
-        );
-
-        // normalize gps coordinates URIs
-        $modifiedTtl = preg_replace_callback(
-            '/<' . $escapedBase . 'gps\/([^>]+)>/',
-            function($matches) use ($itemSetId, $itemIdentifier, &$replacements) {
-                $gpsId = $matches[1];
-                $replacements++;
-   
-                return "<{$this->localBaseUri}$itemSetId/item/$itemIdentifier/gps/$gpsId>";
-            },
-            $modifiedTtl
-        );
-        
-        // Normalize encounter URIs
-        $modifiedTtl = preg_replace_callback(
-        '/<' . $escapedBase . 'encounter\/([^>]+)>/',
-        function($matches) use ($itemSetId, $itemIdentifier, &$replacements) {
-            $encounterId = $matches[1];
-            $replacements++;
-            
-            $excavationIdentifier = $this->getExcavationIdentifierFromItemSet($itemSetId) ?: "excavation";
-            
-            $newUri = "<{$this->localBaseUri}$itemSetId/excavation/$excavationIdentifier/encounter/$encounterId>";
-            
-   
-            return $newUri;
-        },
-        $modifiedTtl
-    );
-
-    $modifiedTtl = preg_replace_callback(
-        '/<' . $escapedBase . '([^\/]+)\/item\/([^\/]+)\/encounter\/([^>]+)>/',
-        function($matches) use ($itemSetId, &$replacements) {
-            $setId = $matches[1];
-            $itemId = $matches[2];
-            $encounterId = $matches[3];
-            
-            $excavationIdentifier = $this->getExcavationIdentifierFromItemSet($setId) ?: "excavation";
-            
-            $newUri = "<{$this->localBaseUri}$setId/excavation/$excavationIdentifier/encounter/$encounterId>";
-            
-            $replacements++;
-   
-            return $newUri;
-        },
-        $modifiedTtl
-    );
-    
-    $modifiedTtl = str_replace('<<', '<', $modifiedTtl);
-    $modifiedTtl = str_replace('>>', '>', $modifiedTtl);
-       
-    error_log('normalized: ' . $modifiedTtl, 3, OMEKA_PATH . '/logs/normalizeeeee_uris.log');
-    return $modifiedTtl;
 }
 
 /**
@@ -2528,13 +2168,13 @@ private function processExcavationFormData($excavationData, $excavationIdentifie
 
     if ($hasLocationData) {
         $siteName = $excavationData['site_name'] ?? 'unknown';
-        $siteSlug = $this->createUrlSlug($siteName);
+        $siteSlug = $this->ttlUriHelper->createUrlSlug($siteName);
         $locationUri = "$baseUri/location/$siteSlug";
         $gpsUri = "$baseUri/gps/$siteSlug";
     }
     
     // Build TTL data
-    $ttl = $this->getTtlPrefixes();
+    $ttl = $this->ttlUriHelper->getTtlPrefixes();
     
     // MAIN EXCAVATION SECTION
     $ttl .= "# ========================================================================================\n";
@@ -2564,7 +2204,7 @@ private function processExcavationFormData($excavationData, $excavationIdentifie
     if (!empty($excavationData['entities']['squares'])) {
         $squareUris = [];
         foreach ($excavationData['entities']['squares'] as $square) {
-            $squareSlug = $this->createUrlSlug($square['square_id']);
+            $squareSlug = $this->ttlUriHelper->createUrlSlug($square['square_id']);
             $squareUri = "$baseUri/square/$squareSlug";
             $squareUris[] = "<$squareUri>";
         }
@@ -2575,7 +2215,7 @@ private function processExcavationFormData($excavationData, $excavationIdentifie
     if (!empty($excavationData['entities']['contexts'])) {
         $contextUris = [];
         foreach ($excavationData['entities']['contexts'] as $context) {
-            $contextSlug = $this->createUrlSlug($context['context_id']);
+            $contextSlug = $this->ttlUriHelper->createUrlSlug($context['context_id']);
             $contextUri = "$baseUri/context/$contextSlug";
             $contextUris[] = "<$contextUri>";
         }
@@ -2604,7 +2244,7 @@ private function processExcavationFormData($excavationData, $excavationIdentifie
     if (!empty($excavationData['entities']['squares'])) {
         $ttl .= "# =========== EXCAVATION SQUARES ===========\n\n";
         foreach ($excavationData['entities']['squares'] as $square) {
-            $squareSlug = $this->createUrlSlug($square['square_id']);
+            $squareSlug = $this->ttlUriHelper->createUrlSlug($square['square_id']);
             $squareUri = "$baseUri/square/$squareSlug";
             $ttl .= $this->generateSquareTtl($squareUri, $square);
         }
@@ -2614,7 +2254,7 @@ private function processExcavationFormData($excavationData, $excavationIdentifie
     if (!empty($excavationData['entities']['contexts'])) {
         $ttl .= "# =========== CONTEXTS ===========\n\n";
         foreach ($excavationData['entities']['contexts'] as $context) {
-            $contextSlug = $this->createUrlSlug($context['context_id']);
+            $contextSlug = $this->ttlUriHelper->createUrlSlug($context['context_id']);
             $contextUri = "$baseUri/context/$contextSlug";
             $ttl .= $this->generateContextTtl($contextUri, $context, $excavationData['entities'], $baseUri);
         }
@@ -2625,7 +2265,7 @@ private function processExcavationFormData($excavationData, $excavationIdentifie
         $ttl .= "# =========== STRATIGRAPHIC VOLUME UNITS ===========\n\n";
         foreach ($excavationData['entities']['svus'] as $svu) {
    
-            $svuSlug = $this->createUrlSlug($svu['svu_id']);
+            $svuSlug = $this->ttlUriHelper->createUrlSlug($svu['svu_id']);
             $svuUri = "$baseUri/svu/$svuSlug";
             $ttl .= $this->generateSvuTtl($svuUri, $svu);
         }
@@ -2659,7 +2299,7 @@ private function generateTimelineAndInstantSections(&$ttl, $excavationData, $bas
     
     foreach ($excavationData['entities']['svus'] as $svu) {
         if (!empty($svu['svu_lower_year']) || !empty($svu['svu_upper_year'])) {
-            $svuSlug = $this->createUrlSlug($svu['svu_id']);
+            $svuSlug = $this->ttlUriHelper->createUrlSlug($svu['svu_id']);
             $timelineUri = "$baseUri/timeline/$svuSlug";
             $timelineUris[] = [
                 'uri' => $timelineUri,
@@ -3095,32 +2735,6 @@ private function processArchaeologicalContextSelections($formData, $itemSetId, $
 }
 
     /**
-     * Sanitizes a filename for use in a URI.
-     * This method replaces invalid characters with hyphens and ensures the filename is safe for URIs.
-     * @param string $filename The original filename
-     * @return string The sanitized filename suitable for URIs
-     */
-    private function sanitizeFilenameForUri($filename) {
-        $extension = pathinfo($filename, PATHINFO_EXTENSION);
-        $basename = pathinfo($filename, PATHINFO_FILENAME);
-        
-        // Remove or replace invalid characters 
-        $basename = preg_replace('/[^a-zA-Z0-9_-]/', '-', $basename);
-        $basename = preg_replace('/-+/', '-', $basename); // Replace multiple hyphens with a single one
-        $basename = trim($basename, '-');
-        
-        if (empty($basename)) {
-            $basename = 'file';
-        }
-        
-        if (!empty($extension)) {
-            return $basename . '.' . $extension;
-        }
-        
-        return $basename;
-    }
-
-    /**
      * Processes the form data for the arrowhead item.
      * This includes extracting relevant information and generating RDF triples.
      * @param array $formData The form data submitted for the arrowhead
@@ -3145,7 +2759,7 @@ private function processArchaeologicalContextSelections($formData, $itemSetId, $
         $gpsUri = "$baseUri/gps/$arrowheadId";
         
         // Build TTL data
-        $ttl = $this->getTtlPrefixes();
+        $ttl = $this->ttlUriHelper->getTtlPrefixes();
         
         $contextResult = $this->processArchaeologicalContextSelections($formData, $itemSetId, $baseUri);
         $linkedResources = $contextResult['references'];
@@ -3366,7 +2980,7 @@ private function processArchaeologicalContextSelections($formData, $itemSetId, $
                     $imageParts = parse_url($image);
                     if (isset($imageParts['path'])) {
                         $originalFilename = basename($imageParts['path']);
-                        $sanitizedFilename = $this->sanitizeFilenameForUri($originalFilename);
+                        $sanitizedFilename = $this->ttlUriHelper->sanitizeFilenameForUri($originalFilename);
                         
                         $imageUri = str_replace($originalFilename, $sanitizedFilename, $image);
                         $ttl .= "    edm:Webresource <$imageUri>;\n";
@@ -3379,7 +2993,7 @@ private function processArchaeologicalContextSelections($formData, $itemSetId, $
             $imageParts = parse_url($images);
             if (isset($imageParts['path'])) {
                 $originalFilename = basename($imageParts['path']);
-                $sanitizedFilename = $this->sanitizeFilenameForUri($originalFilename);
+                $sanitizedFilename = $this->ttlUriHelper->sanitizeFilenameForUri($originalFilename);
                 
                 $imageUri = str_replace($originalFilename, $sanitizedFilename, $images);
                 $ttl .= "    edm:Webresource <$imageUri>;\n";
@@ -4393,7 +4007,7 @@ private function cleanRdfXmlNamespaces($rdfXmlData)
 private function cleanupTtlOutput($ttlData)
 {
     // Remove auto-generated namespace prefixes and replace with clean ones
-    $cleanTtl = $this->getTtlPrefixes();
+    $cleanTtl = $this->ttlUriHelper->getTtlPrefixes();
     
     // Remove existing @prefix lines from the TTL
     $lines = explode("\n", $ttlData);
@@ -4543,307 +4157,18 @@ private function fixKosUris($content)
 
 /**
  * Sends the Turtle data to GraphDB for validation and upload.
- * This method handles SHACL validation, uploads the data, and logs the results.
- * @param string $data The Turtle data to upload
- * @param int|null $excavationId The ID of the excavation or item set
+ *
+ * @param string $data Turtle payload
+ * @param int|string|null $excavationId Excavation / item set key for named graph
  * @return string Result message indicating success or failure
  */
 private function sendToGraphDB($data, $excavationId)
 {
-    $logger = new Logger();
-    $writer = new Stream(OMEKA_PATH . '/logs/graphdb-errors.log');
+    $this->excavationIdentifier = $excavationId ?: '0';
+    $graphUri = $this->baseDataGraphUri . $this->excavationIdentifier . '/';
 
-    $logger->addWriter($writer);
-
-    // Set the graph URI based on excavation ID if provided
-    $graphUri = $this->baseDataGraphUri;
-    
-    // Use the provided excavation ID or default to "0"
-    $this->excavationIdentifier = $excavationId ?: "0";
-    $graphUri .= $this->excavationIdentifier . "/";
-    
-   
-
-    try {
-        $validationResult = $this->validateData($data, $graphUri);   
-        if (!empty($validationResult)) {
-            $errorMessage = 'Data upload failed: SHACL validation errors: ' . implode('; ', $validationResult);
-   
-            $logger->err($errorMessage);
-            return $errorMessage;
-        }
-
-        $credentials = $this->getGraphDBCredentials();
-
-        $client = new Client();
-        $fullUrl = $this->graphdbEndpoint . '?graph=' . urlencode($graphUri);
-   
-        
-        $client->setUri($fullUrl);
-        $client->setMethod('POST');
-        $client->setHeaders([
-            'Content-Type' => 'text/turtle',
-            'Authorization' => 'Basic ' . base64_encode($credentials['username'] . ':' . $credentials['password'])
-        ]);
-        $client->setRawBody($data);
-
-        $client->setOptions(['timeout' => 60]); 
-
-        $response = $client->send();
-
-        $status = $response->getStatusCode();
-        $body = $response->getBody();
-        $message = "Response Status: $status | Response Body: $body";
-   
-        $logger->info($message);
-
-
-        if ($status == 401) {
-            $errorMessage = "Authentication failed with GraphDB. Please check your credentials.";
-   
-            $logger->err($errorMessage);
-            return $errorMessage;
-        }
-
-
-        if ($response->isSuccess()) {
-            return 'Data uploaded and validated successfully.';
-        } else {
-            $errorMessage = 'Failed to upload data: ' . $message;
-   
-            $logger->err($errorMessage);
-            return $errorMessage;
-        }
-    } catch (\Exception $e) {
-        $errorMessage = 'Failed to upload data due to an exception: ' . $e->getMessage();
-        $logger->err($errorMessage);
-   
-        return $errorMessage;
-    }
-    
+    return $this->graphDbHttpService->uploadAfterShaclValidation($graphUri, $data);
 }
-
-
-
-/**
- * Retrieves GraphDB write credentials from config file or environment.
- *
- * Resolution order: config file values (which themselves may read env vars)
- * → direct env vars → fail with RuntimeException.
- *
- * @return array{username: string, password: string}
- * @throws \RuntimeException When credentials cannot be resolved
- */
-private function getGraphDBCredentials()
-{
-    $configFile = OMEKA_PATH . '/modules/AddTriplestore/config/graphdb.config.php';
-    if (file_exists($configFile)) {
-        $credentials = include $configFile;
-        if (is_array($credentials)
-            && !empty($credentials['username']) && !empty($credentials['password'])
-            && $credentials['username'] !== 'CHANGE_ME'
-            && $credentials['password'] !== 'CHANGE_ME') {
-            return [
-                'username' => $credentials['username'],
-                'password' => $credentials['password'],
-            ];
-        }
-    }
-
-    $user = getenv('GRAPHDB_USERNAME');
-    $pass = getenv('GRAPHDB_PASSWORD');
-    if (!empty($user) && !empty($pass)) {
-        return ['username' => $user, 'password' => $pass];
-    }
-
-    throw new \RuntimeException(
-        'GraphDB credentials are not configured. '
-        . 'Set GRAPHDB_USERNAME/GRAPHDB_PASSWORD environment variables or '
-        . 'configure modules/AddTriplestore/config/graphdb.config.php.'
-    );
-}
-
-/**
- * Retrieves GraphDB read-only credentials from config file or environment.
- * Falls back to write credentials when read-only credentials are not configured.
- *
- * @return array{username: string, password: string}
- * @throws \RuntimeException When neither read-only nor write credentials are configured
- */
-private function getReadonlyGraphDBCredentials()
-{
-    $configFile = OMEKA_PATH . '/modules/AddTriplestore/config/graphdb.config.php';
-    if (file_exists($configFile)) {
-        $credentials = include $configFile;
-        if (is_array($credentials)
-            && !empty($credentials['readonly_username']) && !empty($credentials['readonly_password'])
-            && $credentials['readonly_username'] !== 'CHANGE_ME'
-            && $credentials['readonly_password'] !== 'CHANGE_ME') {
-            return [
-                'username' => $credentials['readonly_username'],
-                'password' => $credentials['readonly_password'],
-            ];
-        }
-    }
-
-    $user = getenv('GRAPHDB_READONLY_USERNAME');
-    $pass = getenv('GRAPHDB_READONLY_PASSWORD');
-    if (!empty($user) && !empty($pass)) {
-        return ['username' => $user, 'password' => $pass];
-    }
-
-    return $this->getGraphDBCredentials();
-}
-
-/**
- * Retrieves Omeka S API credentials from environment or config.
- *
- * @return array{base_url: string, key_identity: string, key_credential: string}
- * @throws \RuntimeException When API credentials are not configured
- */
-private function getOmekaApiCredentials()
-{
-    $configFile = OMEKA_PATH . '/modules/AddTriplestore/config/graphdb.config.php';
-    if (file_exists($configFile)) {
-        $config = include $configFile;
-        if (is_array($config)
-            && !empty($config['omeka_key_identity']) && !empty($config['omeka_key_credential'])
-            && $config['omeka_key_identity'] !== 'CHANGE_ME'
-            && $config['omeka_key_credential'] !== 'CHANGE_ME') {
-            $baseUrl = $config['omeka_base_url'] ?? getenv('OMEKA_BASE_URL') ?: null;
-            if (empty($baseUrl) || $baseUrl === 'CHANGE_ME') {
-                throw new \RuntimeException(
-                    'Omeka S API base URL is not configured. '
-                    . 'Set OMEKA_BASE_URL environment variable or configure omeka_base_url in graphdb.config.php.'
-                );
-            }
-            return [
-                'base_url'       => $baseUrl,
-                'key_identity'   => $config['omeka_key_identity'],
-                'key_credential' => $config['omeka_key_credential'],
-            ];
-        }
-    }
-
-    $identity   = getenv('OMEKA_KEY_IDENTITY');
-    $credential = getenv('OMEKA_KEY_CREDENTIAL');
-    $baseUrl    = getenv('OMEKA_BASE_URL') ?: null;
-    if (!empty($identity) && !empty($credential)) {
-        if (empty($baseUrl) || $baseUrl === 'CHANGE_ME') {
-            throw new \RuntimeException(
-                'Omeka S API base URL is not configured. '
-                . 'Set OMEKA_BASE_URL environment variable or configure omeka_base_url in graphdb.config.php.'
-            );
-        }
-        return [
-            'base_url'       => $baseUrl,
-            'key_identity'   => $identity,
-            'key_credential' => $credential,
-        ];
-    }
-
-    throw new \RuntimeException(
-        'Omeka S API credentials are not configured. '
-        . 'Set OMEKA_KEY_IDENTITY/OMEKA_KEY_CREDENTIAL environment variables or '
-        . 'configure modules/AddTriplestore/config/graphdb.config.php.'
-    );
-}
-
-
-/**
- * Validates the Turtle data against SHACL shapes in GraphDB.
- * This method prepares and executes a SPARQL query to validate the data against predefined SHACL shapes.
- * @param string $data The Turtle data to validate
- * @param string $graphUri The URI of the graph to validate against
- * @return array An array of validation errors, if any
- */
-private function validateData($data, $graphUri)
-    {
-        $errors = [];
-        $logger = new Logger(); 
-        $writer = new Stream(OMEKA_PATH . '/logs/graphdb-errors.log');
-        $logger->addWriter($writer);
-
-        try {
-
-            $credentials = $this->getGraphDBCredentials();
-
-            $query = "PREFIX sh: <http://www.w3.org/ns/shacl#>
-            PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-            
-            SELECT ?message
-            WHERE {
-              GRAPH <http://rdf4j.org/schema/rdf4j#SHACLShapeGraph> {
-                ?shape a sh:NodeShape .
-              }
-              GRAPH <$graphUri> {
-                ?focusNode ?predicate ?object .
-              }
-              FILTER EXISTS {
-                  GRAPH <http://rdf4j.org/schema/rdf4j#SHACLShapeGraph> {
-                    ?shape sh:targetClass ?targetClass .
-                    FILTER NOT EXISTS { ?focusNode a ?targetClass }
-                  }
-              }
-              FILTER EXISTS {
-                  GRAPH <http://rdf4j.org/schema/rdf4j#SHACLShapeGraph> {
-                    ?shape sh:property ?propertyShape .
-                    ?propertyShape sh:path ?path .
-                    FILTER NOT EXISTS { ?focusNode ?path ?object }
-                  }
-              }
-              BIND(CONCAT('Violation at node: ', str(?focusNode), ', predicate: ', str(?predicate), ', object: ', str(?object)) AS ?message)
-            }
-            ";
-
-            $client = new Client();
-            $client->setUri($this->graphdbQueryEndpoint);
-            $client->setMethod('POST');
-            $client->setHeaders([
-                'Content-Type' => 'application/sparql-query',
-                'Accept' => 'application/sparql-results+json', 
-                'Authorization' => 'Basic ' . base64_encode($credentials['username'] . ':' . $credentials['password'])
-            ]);
-            $client->setRawBody($query);
-            $response = $client->send();
-            if ($response->getStatusCode() == 401) {
-                $errorMessage = "Authentication failed with GraphDB. Please check your credentials.";
-                $logger->err($errorMessage);
-   
-                return [$errorMessage];
-            }
-
-            if (!$response->isSuccess()) {
-                $errorMessage = "SHACL validation query failed: " . $response->getStatusCode() . " - " . $response->getBody();
-                $logger->err($errorMessage);
-   
-                return [$errorMessage];
-            }
-
-            $rawBody = $response->getBody();
-            $results = json_decode($rawBody, true);
-
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                $errorMessage = "Error decoding JSON response: " . json_last_error_msg() . " Raw Body: " . $rawBody; 
-                $logger->err($errorMessage);
-   
-                return [$errorMessage];
-            }
-
-            if (isset($results['results']['bindings'])) {
-                foreach ($results['results']['bindings'] as $binding) {
-                    $errors[] = $binding['message']['value'];
-                }
-            }
-        } catch (\Exception $e) {
-            $errorMessage = 'SHACL validation failed due to an exception: ' . $e->getMessage();
-            $logger->err($errorMessage);
-   
-            return [$errorMessage];
-        }
-
-        return $errors;
-    }
 
 
 
@@ -6766,7 +6091,7 @@ private function extractArrowheadContextFromTtl($ttlData) {
    
         
         if (preg_match('/<' . preg_quote($locationUri, '/') . '>\s+a\s+excav:Location\s*;\s*dbo:informationName\s+"([^"]+)"/i', $ttlData, $nameMatches)) {
-            $context['location'] = $this->createUrlSlug($nameMatches[1]);
+            $context['location'] = $this->ttlUriHelper->createUrlSlug($nameMatches[1]);
    
         } else {
             if (preg_match('/\/location\/([^\/]+)$/', $locationUri, $locationMatches)) {
@@ -9382,7 +8707,7 @@ private function determineItemType($subjectType) {
  * @return array An array containing errors, created items, and skipped items
  */
 private function sendToOmekaS($omekaData, $itemSetId = null) {
-    $omekaApi = $this->getOmekaApiCredentials();
+    $omekaApi = $this->omekaApiCredentialService->getApiCredentials();
     $omekaBaseUrl = $omekaApi['base_url'];
     $omekaKeyIdentity = $omekaApi['key_identity'];
     $omekaKeyCredential = $omekaApi['key_credential'];
@@ -9780,34 +9105,7 @@ WHERE {
  */
 private function executeGraphDbQuery($queryString)
 {
-    try {
-        $client = new \Laminas\Http\Client();
-        $client->setUri($this->graphdbQueryEndpoint);
-        $client->setMethod('POST');
-        
-        $credentials = $this->getGraphDBCredentials();
-        
-        $client->setHeaders([
-            'Content-Type' => 'application/sparql-query',
-            'Accept' => 'application/sparql-results+json',
-            'Authorization' => 'Basic ' . base64_encode($credentials['username'] . ':' . $credentials['password'])
-        ]);
-        
-        $client->setRawBody($queryString);
-        
-        $response = $client->send();
-        
-        if ($response->isSuccess()) {
-            $results = json_decode($response->getBody(), true);
-            return $results;
-        } else {
-   
-            return null;
-        }
-    } catch (\Exception $e) {
-   
-        return null;
-    }
+    return $this->graphDbHttpService->postSparqlJson($queryString);
 }
 
 
@@ -10072,7 +9370,7 @@ private function organizeAndFormatTtl($rawTtlData, $itemSetId)
 {
     $subjects = $this->parseTtlIntoSubjects($rawTtlData);
     
-    $organizedTtl = $this->getTtlPrefixes();
+    $organizedTtl = $this->ttlUriHelper->getTtlPrefixes();
     $organizedTtl .= "\n# ========================================================================================\n";
     $organizedTtl .= "# ARCHAEOLOGICAL ITEM DATA - ITEM SET $itemSetId\n";
     $organizedTtl .= "# Downloaded from GraphDB on " . date('Y-m-d H:i:s') . "\n";
@@ -10323,7 +9621,7 @@ private function organizeAndFormatItemTtl($rawTtlData, $identifier, $itemSetId)
     $subjects = $this->parseTtlIntoSubjects($rawTtlData);
     
     // Build organized TTL
-    $organizedTtl = $this->getTtlPrefixes();
+    $organizedTtl = $this->ttlUriHelper->getTtlPrefixes();
     $organizedTtl .= "\n# ========================================================================================\n";
     $organizedTtl .= "# ARCHAEOLOGICAL ITEM DATA - " . strtoupper($identifier) . "\n";
     $organizedTtl .= "# Downloaded from GraphDB on " . date('Y-m-d H:i:s') . "\n";
@@ -10451,7 +9749,7 @@ private function executeConstructQuery($query)
             $ttlData = $response->getBody();
             
             if (strpos($ttlData, '@prefix') === false) {
-                $ttlData = $this->getTtlPrefixes() . "\n" . $ttlData;
+                $ttlData = $this->ttlUriHelper->getTtlPrefixes() . "\n" . $ttlData;
             }
             
             return $ttlData;
@@ -10465,27 +9763,6 @@ private function executeConstructQuery($query)
         return null;
     }
 }
-/**
- * This method sanitizes a filename by removing or replacing invalid characters.
- * It ensures the filename is safe for use in file systems.
- * @param string $filename The original filename
- * @return string The sanitized filename
- */
-private function sanitizeFilename($filename)
-{
-    // Remove or replace invalid characters
-    $filename = preg_replace('/[^a-zA-Z0-9_-]/', '_', $filename);
-    $filename = trim($filename, '_');
-    
-    if (empty($filename)) {
-        $filename = 'download';
-    }
-    
-    return $filename;
-}
-
-
-
 
 /**
  * This method queries the GraphDB using SPARQL and returns the results.

@@ -108,17 +108,15 @@ The Workbench is the web-based user interface for managing your database.
 
 ## 5. Connecting GraphDB to Omeka S
 
-Since the project involves integrating Omeka S with GraphDB (as mentioned in your uploaded files with the `AddTriplestore` module), the connection is finalized within Omeka S.
+Integration uses the custom **AddTriplestore** module. Enable it under **Omeka S Admin → Modules**, then set **GraphDB URL, repository, credentials, and MegaLOD base URIs** in `modules/AddTriplestore/config/graphdb.config.php` (copy from `graphdb.config.php.dist`) and/or the environment variables documented in `modules/AddTriplestore/README.md` — there is no separate GraphDB settings screen in the admin UI for these values.
 
-1.  **Install Module:** Ensure your Omeka S installation has the necessary module (like the custom `AddTriplestore` module) enabled.
-2.  **Configure in Omeka S Admin:** Within the Omeka S administrative dashboard, navigate to the module's configuration page.
-3.  **Enter Connection Details:** You will input the following parameters, which connect Omeka S to your running GraphDB instance:
+Typical **local** values (adjust to match your GraphDB workbench):
 
 | Parameter | Value |
 | :--- | :--- |
 | **GraphDB Server URL** | `http://localhost:7200` |
-| **Repository ID** | `omeka_repo` | (Or whatever ID you chose in Step 4) |
-| **User/Password** | *Typically left empty for local setup* | (Unless you secured your GraphDB instance) |
+| **Repository ID** | `omeka_repo` (or the ID you created in Step 4) |
+| **User/Password** | As required by your GraphDB instance (often set for non-local deployments) |
 
 
 # Final steps
