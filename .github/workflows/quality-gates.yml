@@ -44,9 +44,9 @@ jobs:
           tools: composer:v2
           coverage: none
 
+      # Fail only on security advisories; abandoned packages (common in Omeka/Laminas) exit 2 by default.
       - name: composer audit (locked dependencies)
-        run: composer audit --locked --no-dev --format=json
-        continue-on-error: false
+        run: composer audit --locked --no-dev --abandoned=report --format=json
 
   gitleaks:
     name: Secret scan (gitleaks)
