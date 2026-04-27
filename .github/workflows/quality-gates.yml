@@ -1,0 +1,61 @@
+name: Quality gates
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master, develop]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  php-lint-addtriplestore:
+    name: PHP syntax (AddTriplestore)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          coverage: none
+
+      - name: Lint module PHP files
+        run: |
+          set -euo pipefail
+          while IFS= read -r -d '' f; do
+            php -l "$f"
+          done < <(find software/omeka-s/modules/AddTriplestore -name '*.php' -print0)
+
+  composer-audit-omeka:
+    name: Composer audit (Omeka S)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: software/omeka-s
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          tools: composer:v2
+          coverage: none
+
+      - name: composer audit (locked dependencies)
+        run: composer audit --locked --no-dev --format=json
+        continue-on-error: false
+
+  gitleaks:
+    name: Secret scan (gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

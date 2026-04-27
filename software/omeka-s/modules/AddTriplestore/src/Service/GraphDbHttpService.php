@@ -206,6 +206,21 @@ final class GraphDbHttpService
         }
     }
 
+    /**
+     * SPARQL SELECT returning bindings in the same shape as legacy IndexController::querySparql.
+     *
+     * @return list<array<string, array{type: string, value: string}>>
+     */
+    public function selectSparqlBindings(string $sparql): array
+    {
+        $results = $this->postSparqlJson($sparql);
+        if (!is_array($results) || !isset($results['results']['bindings'])) {
+            return [];
+        }
+
+        return $results['results']['bindings'];
+    }
+
     private function createGraphDbLogger(): Logger
     {
         $logger = new Logger();

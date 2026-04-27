@@ -8,6 +8,9 @@ return [
             \AddTriplestore\Service\GraphDbHttpService::class => \AddTriplestore\Service\GraphDbHttpServiceFactory::class,
             \AddTriplestore\Service\Ttl\TtlUriHelper::class => \AddTriplestore\Service\Ttl\TtlUriHelperFactory::class,
             \AddTriplestore\Service\Ttl\TtlUriNormalizer::class => \AddTriplestore\Service\Ttl\TtlUriNormalizerFactory::class,
+            \AddTriplestore\Service\Ttl\XmlToTtlPipeline::class => \AddTriplestore\Service\Ttl\XmlToTtlPipelineFactory::class,
+            \AddTriplestore\Service\Ingestion\OmekaResourceLookupService::class => \AddTriplestore\Service\Ingestion\OmekaResourceLookupServiceFactory::class,
+            \AddTriplestore\Service\Ingestion\OmekaIngestionService::class => \AddTriplestore\Service\Ingestion\OmekaIngestionServiceFactory::class,
         ],
     ],
     'controllers' => [
