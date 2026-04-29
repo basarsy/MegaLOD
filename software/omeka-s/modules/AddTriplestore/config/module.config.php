@@ -7,10 +7,12 @@ return [
             \AddTriplestore\Service\OmekaApiCredentialService::class => \AddTriplestore\Service\OmekaApiCredentialServiceFactory::class,
             \AddTriplestore\Service\GraphDbHttpService::class => \AddTriplestore\Service\GraphDbHttpServiceFactory::class,
             \AddTriplestore\Service\Ttl\TtlUriHelper::class => \AddTriplestore\Service\Ttl\TtlUriHelperFactory::class,
+            \AddTriplestore\Service\Ttl\ExcavationTtlBuilder::class => \AddTriplestore\Service\Ttl\ExcavationTtlBuilderFactory::class,
             \AddTriplestore\Service\Ttl\TtlUriNormalizer::class => \AddTriplestore\Service\Ttl\TtlUriNormalizerFactory::class,
             \AddTriplestore\Service\Ttl\XmlToTtlPipeline::class => \AddTriplestore\Service\Ttl\XmlToTtlPipelineFactory::class,
             \AddTriplestore\Service\Ingestion\OmekaResourceLookupService::class => \AddTriplestore\Service\Ingestion\OmekaResourceLookupServiceFactory::class,
             \AddTriplestore\Service\Ingestion\OmekaIngestionService::class => \AddTriplestore\Service\Ingestion\OmekaIngestionServiceFactory::class,
+            \AddTriplestore\Service\Ingestion\OmekaRestSubmissionService::class => \AddTriplestore\Service\Ingestion\OmekaRestSubmissionServiceFactory::class,
         ],
     ],
     'controllers' => [

@@ -7,8 +7,9 @@ require 'vendor/autoload.php';
 use AddTriplestore\Service\GraphDbHttpService;
 use AddTriplestore\Service\Ingestion\OmekaIngestionService;
 use AddTriplestore\Service\Ingestion\OmekaResourceLookupService;
+use AddTriplestore\Service\Ingestion\OmekaRestSubmissionService;
 use AddTriplestore\Service\MegalodConfig;
-use AddTriplestore\Service\OmekaApiCredentialService;
+use AddTriplestore\Service\Ttl\ExcavationTtlBuilder;
 use AddTriplestore\Service\Ttl\TtlUriHelper;
 use AddTriplestore\Service\Ttl\TtlUriNormalizer;
 use AddTriplestore\Service\Ttl\XmlToTtlPipeline;
@@ -34,11 +35,11 @@ class IndexController extends AbstractActionController
     /** @var GraphDbHttpService */
     private $graphDbHttpService;
 
-    /** @var OmekaApiCredentialService */
-    private $omekaApiCredentialService;
-
     /** @var TtlUriHelper */
     private $ttlUriHelper;
+
+    /** @var ExcavationTtlBuilder */
+    private $excavationTtlBuilder;
 
     /** @var TtlUriNormalizer */
     private $ttlUriNormalizer;
@@ -51,6 +52,9 @@ class IndexController extends AbstractActionController
 
     /** @var OmekaIngestionService */
     private $omekaIngestionService;
+
+    /** @var OmekaRestSubmissionService */
+    private $omekaRestSubmissionService;
 
     private $uploadedFiles = null;
 
@@ -68,22 +72,24 @@ class IndexController extends AbstractActionController
         Client $httpClient,
         MegalodConfig $megalodConfig,
         GraphDbHttpService $graphDbHttpService,
-        OmekaApiCredentialService $omekaApiCredentialService,
         TtlUriHelper $ttlUriHelper,
+        ExcavationTtlBuilder $excavationTtlBuilder,
         TtlUriNormalizer $ttlUriNormalizer,
         XmlToTtlPipeline $xmlToTtlPipeline,
         OmekaResourceLookupService $omekaResourceLookupService,
-        OmekaIngestionService $omekaIngestionService
+        OmekaIngestionService $omekaIngestionService,
+        OmekaRestSubmissionService $omekaRestSubmissionService
     ) {
         $this->router = $router;
         $this->httpClient = $httpClient;
         $this->graphDbHttpService = $graphDbHttpService;
-        $this->omekaApiCredentialService = $omekaApiCredentialService;
         $this->ttlUriHelper = $ttlUriHelper;
+        $this->excavationTtlBuilder = $excavationTtlBuilder;
         $this->ttlUriNormalizer = $ttlUriNormalizer;
         $this->xmlToTtlPipeline = $xmlToTtlPipeline;
         $this->omekaResourceLookupService = $omekaResourceLookupService;
         $this->omekaIngestionService = $omekaIngestionService;
+        $this->omekaRestSubmissionService = $omekaRestSubmissionService;
 
         $this->graphdbEndpoint = $megalodConfig->getGraphdbRdfGraphsServiceUrl();
         $this->graphdbQueryEndpoint = $megalodConfig->getGraphdbQueryEndpoint();
@@ -925,7 +931,7 @@ class IndexController extends AbstractActionController
                 
                 
                 // ttlData processing
-                $ttlData = $this->processExcavationFormData($excavationData, $excavationIdentifier);
+                $ttlData = $this->excavationTtlBuilder->buildFromFormData($excavationData, $excavationIdentifier);
                 $itemSetData = $this->createExcavationItemSetData($excavationIdentifier, $excavationData);
                 
                 try {
@@ -1942,177 +1948,6 @@ private function processArchaeologistDataFromForm($formData)
     return $archaeologistData;
 }
 
-
-
-
-
-
-/**
- * Processes archaeologist data for Turtle (TTL) generation.
- * This method checks if the archaeologist is existing or new and generates a URI accordingly.
- * @param array $archaeologistData The processed archaeologist data containing 'existing', 'item_id', and 'name'
- * @param string $baseUri The base URI used to construct the full archaeollogist URI
- * @return string|null The generated archaeologist URI or null if no valid data
- * 
- */
-private function processArchaeologistForTtl($archaeologistData, $baseUri)
-{
-    if ($archaeologistData['existing'] && !empty($archaeologistData['item_id'])) {
-        return "$baseUri/archaeologist/item-" . $archaeologistData['item_id'];
-    } elseif (!empty($archaeologistData['name'])) {
-        // Create new archaeologist with new URI
-        $nameSlug = $this->ttlUriHelper->createUrlSlug($archaeologistData['name']);
-        return "$baseUri/archaeologist/$nameSlug";
-    }
-    
-    return null;
-}
-
-
-
-/**
- * Generate Turtle for a context entity and its SVU relationships.
- *
- * @param string $contextUri URI for the context
- * @param array $context Context data (context_id, context_description)
- * @param array $allEntities Entities with contexts, svus and relationships
- * @param string $baseUri Base URI for related entities
- * @return string TTL string for the context
- */
-private function generateContextTtl($contextUri, $context, $allEntities, $baseUri)
-{
-    $ttl = "<$contextUri> a excav:Context ;\n";
-    $ttl .= "    dct:identifier \"" . $context['context_id'] . "\"^^xsd:literal ;\n";
-    
-    if (!empty($context['context_description'])) {
-        $ttl .= "    dct:description \"" . $context['context_description'] . "\"^^xsd:literal ;\n";
-    }
-    
-    if (!empty($allEntities['relationships'])) {
-        foreach ($allEntities['relationships'] as $relationship) {
-            $contextFound = false;
-            foreach ($allEntities['contexts'] as $ctxIndex => $ctx) {
-                if ($ctx['context_id'] === $context['context_id'] && $relationship['context'] == $ctxIndex) {
-                    $contextFound = true;
-                    break;
-                }
-            }
-            
-            if ($contextFound && isset($allEntities['svus'][$relationship['svu']])) {
-                $svu = $allEntities['svus'][$relationship['svu']];
-                $svuSlug = $this->ttlUriHelper->createUrlSlug($svu['svu_id']);
-                $svuUri = "$baseUri/svu/$svuSlug";
-                $ttl .= "    excav:hasSVU <$svuUri> ;\n";
-            }
-        }
-    }
-    
-    $ttl .= "    .\n\n";
-    
-    return $ttl;
-}
-
-
-/**
- * Generate enhanced location Turtle (TTL) data from excavation information.
- *
- * This method cretes Turtle format RDF data that enhances a location with
- * additional geographic and excavation information.
- *
- * @param string $locationUri The URI identifier for the location
- * @param string $gpsUri The URI for the GPS coordinate reference
- * @param array $excavationData Data about the excavation associated with the location
- * @return string The generated Turtle format data
- */
-private function generateEnhancedLocationTtl($locationUri, $gpsUri, $excavationData)
-{
-    $ttl = "";
-
-    // Check if any location data is provided
-    $hasLocationData = !empty($excavationData['site_name']) ||
-                      !empty($excavationData['district']) ||
-                      !empty($excavationData['parish']) ||
-                      !empty($excavationData['country']) ||
-                      (!empty($excavationData['latitude']) && !empty($excavationData['longitude']));
-    
-    if (!$hasLocationData) {
-   
-        return null;
-    }       
-    
-    $ttl .= "<$locationUri> a excav:Location ;\n";
-    
-    if (!empty($excavationData['site_name'])) {
-        $ttl .= "    dbo:informationName \"" . $excavationData['site_name'] . "\"^^xsd:literal ;\n";
-    }
-    
-    $baseUri = dirname(dirname($locationUri)); 
-    $entitiesToDeclare = [];
-    
-    // Add district, parish, and country
-    if (!empty($excavationData['district'])) {
-        $districtSlug = $this->ttlUriHelper->createUrlSlug($excavationData['district']);
-        $districtUri = "http://dbpedia.org/resource/$districtSlug";
-        $ttl .= "    dbo:district <$districtUri> ;\n";
-        $entitiesToDeclare['district'] = [
-            'uri' => $districtUri,
-            'label' => $excavationData['district']
-        ];
-    }
-    
-    if (!empty($excavationData['parish'])) {
-        $parishSlug = $this->ttlUriHelper->createUrlSlug($excavationData['parish']);
-        $parishUri = "http://dbpedia.org/resource/$parishSlug";
-        $ttl .= "    dbo:parish <$parishUri> ;\n";
-        $entitiesToDeclare['parish'] = [
-            'uri' => $parishUri,
-            'label' => $excavationData['parish']
-        ];
-    }
-    
-    if (!empty($excavationData['country'])) {
-        $countrySlug = str_replace(' ', '_', $excavationData['country']);
-        $countryUri = "http://dbpedia.org/resource/" . $countrySlug;
-        $ttl .= "    dbo:Country <$countryUri> ;\n";
-        $entitiesToDeclare['country'] = [
-            'uri' => $countryUri,
-            'label' => $excavationData['country']
-        ];
-    }
-    
-    if (!empty($excavationData['latitude']) && !empty($excavationData['longitude'])) {
-        $ttl .= "    excav:hasGPSCoordinates <$gpsUri> ;\n";
-    }
-
-    $ttl .= ".\n";
-    if (!empty($excavationData['latitude']) && !empty($excavationData['longitude'])) {
-        $ttl .= "<$gpsUri> a excav:GPSCoordinates ;\n";
-        $ttl .= "    geo:lat \"" . $excavationData['latitude'] . "\"^^xsd:decimal ;\n";
-        $ttl .= "    geo:long \"" . $excavationData['longitude'] . "\"^^xsd:decimal .\n\n";
-    }
-
-    
-    if (!empty($entitiesToDeclare)) {
-        $ttl .= "# Type declarations for referenced resources\n";
-        
-        if (isset($entitiesToDeclare['district'])) {
-            $ttl .= "<{$entitiesToDeclare['district']['uri']}> a dbo:District .\n";
-        }
-        
-        if (isset($entitiesToDeclare['parish'])) {
-            $ttl .= "<{$entitiesToDeclare['parish']['uri']}> a dbo:Parish .\n";
-        }
-        if (isset($entitiesToDeclare['country'])) {
-            $ttl .= "<{$entitiesToDeclare['country']['uri']}> a dbo:Country .\n";
-        }
-        
-        $ttl .= "\n";
-    }
-    
-    return $ttl;
-}
-
-
 /**
  * Normalize URIs in TTL data for local use.
  *
@@ -2130,316 +1965,6 @@ private function normalizeUris($ttlData, $itemSetId)
         }
     );
 }
-
-/**
- * Generates Turtle format RDF
- * 
- * This method converts an SVU entity to TTL
- * 
- * @param string $svuUri The URI identifier for the SVU
- * @param mixed $svu The SVU entity/data to be converted to TTL
- * @return string The generated TTL formatted data
- */
-private function generateSvuTtl($svuUri, $svu)
-{
-    $ttl = "<$svuUri> a excav:StratigraphicVolumeUnit ;\n";
-    $ttl .= "    dct:identifier \"" . $svu['svu_id'] . "\"^^xsd:literal ;\n";
-    
-    if (!empty($svu['svu_description'])) {
-        $ttl .= "    dct:description \"" . $svu['svu_description'] . "\"^^xsd:literal ;\n";
-    }
-    
-    if (!empty($svu['svu_lower_year']) || !empty($svu['svu_upper_year'])) {
-        $baseUri = dirname(dirname($svuUri)); 
-        $svuSlug = basename($svuUri); 
-        $timelineUri = "$baseUri/timeline/$svuSlug";
-        
-        $ttl .= "    excav:hasTimeline <$timelineUri> ;\n";
-    }
-    
-    $ttl .= "    .\n\n";
-    
-    return $ttl;
-}
-
-/**
- * Convert excavation form data to TTL (Turtle) RDF.
- * Generates URIs and TTL sections for excavation, location, archaeologist, squares, contexts, SVUs, and timelines.
- * @param array $excavationData Form data
- * @param string $excavationIdentifier Unique excavation ID
- * @return string TTL RDF
- */
-private function processExcavationFormData($excavationData, $excavationIdentifier)
-{
-   
-    
-    $baseUri = "https://purl.org/megalod";
-    $excavationUri = "$baseUri/excavation/$excavationIdentifier";
-
-    $hasLocationData = !empty($excavationData['site_name']) ||
-                      !empty($excavationData['district']) ||
-                      !empty($excavationData['parish']) ||
-                      !empty($excavationData['country']) ||
-                      (!empty($excavationData['latitude']) && !empty($excavationData['longitude']));
-    $locationUri = null;
-    $gpsUri = null;
-
-    if ($hasLocationData) {
-        $siteName = $excavationData['site_name'] ?? 'unknown';
-        $siteSlug = $this->ttlUriHelper->createUrlSlug($siteName);
-        $locationUri = "$baseUri/location/$siteSlug";
-        $gpsUri = "$baseUri/gps/$siteSlug";
-    }
-    
-    // Build TTL data
-    $ttl = $this->ttlUriHelper->getTtlPrefixes();
-    
-    // MAIN EXCAVATION SECTION
-    $ttl .= "# ========================================================================================\n";
-    $ttl .= "# EXCAVATION DATA - " . strtoupper($excavationData['site_name'] ?? 'ARCHAEOLOGICAL SITE') . "\n";
-    $ttl .= "# ========================================================================================\n\n";
-    
-    $ttl .= "# =========== MAIN EXCAVATION ===========\n\n";
-    
-    $ttl .= "<$excavationUri> a excav:Excavation ;\n";
-
-    if($excavationIdentifier != null){
-            $ttl .= "    dct:identifier \"$excavationIdentifier\"^^xsd:literal ;\n";
-    }
-    if ($locationUri) {
-        $ttl .= "    dul:hasLocation <$locationUri> ;\n";
-    }
-    
-    // Add archaeologist reference
-    if (!empty($excavationData['archaeologist']['name'])) {
-        $archaeologistUri = $this->processArchaeologistForTtl($excavationData['archaeologist'], $baseUri);
-        if ($archaeologistUri) {
-            $ttl .= "    excav:hasPersonInCharge <$archaeologistUri> ;\n";
-        }
-    }
-    
-    // Add squares
-    if (!empty($excavationData['entities']['squares'])) {
-        $squareUris = [];
-        foreach ($excavationData['entities']['squares'] as $square) {
-            $squareSlug = $this->ttlUriHelper->createUrlSlug($square['square_id']);
-            $squareUri = "$baseUri/square/$squareSlug";
-            $squareUris[] = "<$squareUri>";
-        }
-        $ttl .= "    excav:hasSquare " . implode(",\n                    ", $squareUris) . " ;\n";
-    }
-    
-    // Add contexts
-    if (!empty($excavationData['entities']['contexts'])) {
-        $contextUris = [];
-        foreach ($excavationData['entities']['contexts'] as $context) {
-            $contextSlug = $this->ttlUriHelper->createUrlSlug($context['context_id']);
-            $contextUri = "$baseUri/context/$contextSlug";
-            $contextUris[] = "<$contextUri>";
-        }
-        $ttl .= "    excav:hasContext " . implode(",\n                     ", $contextUris) . " .\n\n";
-    } else {
-        $ttl .= "    .\n\n";
-    }
-    
-    // LOCATION SECTION
-    if ($locationUri) {
-        $ttl .= "# =========== LOCATION ===========\n\n";
-        $locationTtl = $this->generateEnhancedLocationTtl($locationUri, $gpsUri, $excavationData);
-        if ($locationTtl) {
-            $ttl .= $locationTtl;
-        }
-    }
-    
-    // ARCHAEOLOGIST SECTION
-    if (!empty($excavationData['archaeologist']['name']) && !$excavationData['archaeologist']['existing']) {
-        $ttl .= "# =========== ARCHAEOLOGIST ===========\n\n";
-        $archaeologistUri = $this->processArchaeologistForTtl($excavationData['archaeologist'], $baseUri);
-        $ttl .= $this->generateArchaeologistTtl($archaeologistUri, $excavationData['archaeologist']);
-    }
-    
-    // SQUARES SECTION
-    if (!empty($excavationData['entities']['squares'])) {
-        $ttl .= "# =========== EXCAVATION SQUARES ===========\n\n";
-        foreach ($excavationData['entities']['squares'] as $square) {
-            $squareSlug = $this->ttlUriHelper->createUrlSlug($square['square_id']);
-            $squareUri = "$baseUri/square/$squareSlug";
-            $ttl .= $this->generateSquareTtl($squareUri, $square);
-        }
-    }
-    
-    // CONTEXTS SECTION
-    if (!empty($excavationData['entities']['contexts'])) {
-        $ttl .= "# =========== CONTEXTS ===========\n\n";
-        foreach ($excavationData['entities']['contexts'] as $context) {
-            $contextSlug = $this->ttlUriHelper->createUrlSlug($context['context_id']);
-            $contextUri = "$baseUri/context/$contextSlug";
-            $ttl .= $this->generateContextTtl($contextUri, $context, $excavationData['entities'], $baseUri);
-        }
-    }
-    
-    // SVUS SECTION
-    if (!empty($excavationData['entities']['svus'])) {
-        $ttl .= "# =========== STRATIGRAPHIC VOLUME UNITS ===========\n\n";
-        foreach ($excavationData['entities']['svus'] as $svu) {
-   
-            $svuSlug = $this->ttlUriHelper->createUrlSlug($svu['svu_id']);
-            $svuUri = "$baseUri/svu/$svuSlug";
-            $ttl .= $this->generateSvuTtl($svuUri, $svu);
-        }
-    }
-    
-    // Generate timeline and instant sections if we have SVUs with dates
-    $this->generateTimelineAndInstantSections($ttl, $excavationData, $baseUri);
-    
-   
-    
-    return $ttl;
-}
-
-
-
-
-/**
- * Appends timeline and time instant TTL sections for SVUs with dating info.
- *
- * @param string &$ttl TTL string to append to
- * @param array $excavationData Excavation data with 'entities' and 'svus'
- * @param string $baseUri Base URI for timeline/instant URIs
- */
-private function generateTimelineAndInstantSections(&$ttl, $excavationData, $baseUri) {
-    if (empty($excavationData['entities']['svus'])) {
-        return;
-    }
-    
-    $timelineUris = [];
-    $instantUris = [];
-    
-    foreach ($excavationData['entities']['svus'] as $svu) {
-        if (!empty($svu['svu_lower_year']) || !empty($svu['svu_upper_year'])) {
-            $svuSlug = $this->ttlUriHelper->createUrlSlug($svu['svu_id']);
-            $timelineUri = "$baseUri/timeline/$svuSlug";
-            $timelineUris[] = [
-                'uri' => $timelineUri,
-                'svu' => $svu
-            ];
-        }
-    }
-    
-    if (!empty($timelineUris)) {
-        $ttl .= "# =========== TIMELINES ===========\n\n";
-        
-        foreach ($timelineUris as $timelineData) {
-            $timeline = $timelineData['uri'];
-            $svu = $timelineData['svu'];
-            
-            $ttl .= "<$timeline> a excav:TimeLine ;\n";
-            
-            if (!empty($svu['svu_lower_year'])) {
-                $beginInstantUri = "$timeline/beginning";
-                $ttl .= "    time:hasBeginning <$beginInstantUri> ;\n";
-                $instantUris[] = [
-                    'uri' => $beginInstantUri,
-                    'year' => $svu['svu_lower_year'],
-                    'bc' => !empty($svu['svu_lower_bc'])
-                ];
-            }
-            
-            if (!empty($svu['svu_upper_year'])) {
-                $endInstantUri = "$timeline/end";
-                $ttl .= "    time:hasEnd <$endInstantUri> .\n\n";
-                $instantUris[] = [
-                    'uri' => $endInstantUri,
-                    'year' => $svu['svu_upper_year'],
-                    'bc' => !empty($svu['svu_upper_bc'])
-                ];
-            } else {
-                $ttl .= "    .\n\n";
-            }
-        }
-        
-        if (!empty($instantUris)) {
-            $ttl .= "# =========== TIME INSTANTS ===========\n\n";
-            
-            foreach ($instantUris as $instantData) {
-                $instantUri = $instantData['uri'];
-                $year = $instantData['year'];
-                $isBC = $instantData['bc'];
-                
-                $ttl .= "<$instantUri> a excav:Instant ;\n";
-                $ttl .= "    excav:bcad <https://purl.org/megalod/kos/MegaLOD-BCAD/" . ($isBC ? 'BC' : 'AD') . "> ;\n";
-                
-                $yearValue = abs((int)$year);
-                $yearFormatted = str_pad($yearValue, 4, '0', STR_PAD_LEFT);
-                
-      
-                
-                $ttl .= "    time:inXSDgYear \"$yearFormatted\"^^xsd:gYear .\n\n";
-            }
-        }
-    }
-}
-
-
-/**
- * This method generates Turtle format RDF for an archaeologist.
- * It creates a TTL string with the archaeologist's URI, name, ORCID, and email.
- * @param mixed $archaeologistUri
- * @param mixed $archaeologistData
- * @return string
- */
-private function generateArchaeologistTtl($archaeologistUri, $archaeologistData)
-{
-    $ttl = "<$archaeologistUri> a excav:Archaeologist ;\n";
-    
-    if (!empty($archaeologistData['name'])) {
-        $ttl .= "    foaf:name \"" . $archaeologistData['name'] . "\"^^xsd:literal ;\n";
-    }
-    
-    if (!empty($archaeologistData['orcid'])) {
-        $orcidUrl = "https://orcid.org/" . str_replace('https://orcid.org/', '', $archaeologistData['orcid']);
-        $ttl .= "    foaf:account <$orcidUrl> ;\n";
-    }
-    
-    if (!empty($archaeologistData['email'])) {
-        // Handle multiple emails if provided
-        $emails = is_array($archaeologistData['email']) ? $archaeologistData['email'] : [$archaeologistData['email']];
-        foreach ($emails as $email) {
-            $emailUrl = "mailto:" . str_replace('mailto:', '', $email);
-            $ttl .= "    foaf:mbox <$emailUrl> ;\n";
-        }
-    }
-    
-    $ttl .= "    .\n\n";
-    
-    return $ttl;
-}
-/**
- * Generates Turtle format RDF for a square.
- * This method creates a TTL string with the square's URI, identifier, and coordinates.
- * @param string $squareUri The URI for the square
- * @param array $square The square data containing identifier and coordinates
- * @return string The generated TTL formatted data for the square
- */
-private function generateSquareTtl($squareUri, $square)
-{
-    $ttl = "<$squareUri> a excav:Square ;\n";
-    $ttl .= "    dct:identifier \"" . $square['square_id'] . "\"^^xsd:literal ;\n";
-    
-    if (!empty($square['square_east_west'])) {
-        $ttl .= "    geo:lat \"" . $square['square_east_west'] . "\"^^xsd:decimal ;\n";
-    }
-    
-    if (!empty($square['square_north_south'])) {
-        $ttl .= "    geo:long \"" . $square['square_north_south'] . "\"^^xsd:decimal ;\n";
-    }
-    
-    $ttl .= "    .\n\n";
-    
-    return $ttl;
-}
-
-
 
 /**
  * Creates an item set data array for an excavation.
@@ -3198,62 +2723,6 @@ private function processArchaeologicalContextSelections($formData, $itemSetId, $
 
 
 /**
- * Updates the item set with excavation information.
- * This method adds a description and creator based on the excavation data.
- * @param string $itemSetId The ID of the item set to update
- * @param array $excavationData The excavation data containing location and archaeologist information
- * @return bool True if the update was successful, false otherwise
- */
-private function updateItemSetWithExcavationInfo($itemSetId, $excavationData) {
-    if (!$itemSetId || empty($excavationData)) {
-        return false;
-    }
-    
-    try {
-        $updateData = [];
-        
-        if (!empty($excavationData['location'])) {
-            $updateData['dcterms:description'] = [
-                [
-                    'type' => 'literal',
-                    'property_id' => 4,
-                    '@value' => "Archaeological excavation at " . $excavationData['location']
-                ]
-            ];
-        }
-        
-        if (!empty($excavationData['archaeologist'])) {
-            $updateData['dcterms:creator'] = [
-                [
-                    'type' => 'literal',
-                    'property_id' => 7, // Dublin Core Creator
-                    '@value' => $excavationData['archaeologist']
-                ]
-            ];
-        }
-        
-        if (!empty($updateData)) {
-            $updateResult = $this->api()->update(
-                'item_sets', 
-                $itemSetId, 
-                $updateData, 
-                [], 
-                ['isPartial' => true]
-            );
-            
-            return $updateResult ? true : false;
-        }
-        
-    } catch (\Exception $e) {
-   
-        return false;
-    }
-    
-    return true;
-}
-
-
-/**
  * Uploads the arrowhead data and associated media files.
  * This method processes the form data, generates RDF triples, and uploads the data to the specified item set.
  * @param string $ttlData
@@ -3659,7 +3128,13 @@ private function uploadTtlData(string $ttlData, ?int $itemSetId = null): string 
                 $resolvedExcavationId
             );
 
-            $omekaResponse = $this->sendToOmekaS($omekaData, $itemSetId);
+            $itemSetIdInt = $itemSetId !== null && $itemSetId !== '' ? (int) $itemSetId : null;
+            $omekaResponse = $this->omekaRestSubmissionService->submitItemPayloads(
+                $omekaData,
+                $itemSetIdInt,
+                $this->uploadedFiles,
+                $this->excavationData
+            );
             
             if (empty($omekaResponse['errors'])) {
                 $createdItems = $omekaResponse['created_items'];
@@ -4949,233 +4424,6 @@ private function transformCollectingFormToExcavationData($formData)
     
     return $excavationData;
 }
-/**
- * Processes excavation data from RDF and populates item data.
- * This method extracts location, GPS coordinates, and other relevant information from RDF data.
- * @param array $rdfData The RDF data containing excavation information
- * @param string $subject The subject URI to process
- * @param array &$itemData The item data to populate with extracted information
- */
-
-private function sendToOmekaS($omekaData, $itemSetId = null) {
-    $omekaApi = $this->omekaApiCredentialService->getApiCredentials();
-    $omekaBaseUrl = $omekaApi['base_url'];
-    $omekaKeyIdentity = $omekaApi['key_identity'];
-    $omekaKeyCredential = $omekaApi['key_credential'];
-
-    $client = new Client();
-    $client->setMethod('POST');
-    $client->setHeaders([
-        'Content-Type' => 'application/json',
-    ]);
-
-    $errors = [];
-    $createdItems = [];
-    $skippedItems = [];
-    
-    $identifierMap = [];
-    $duplicatesInBatch = [];
-    
-    foreach ($omekaData as $itemIndex => $itemData) {
-        $identifier = $this->extractIdentifierFromItemData($itemData);
-        if ($identifier) {
-            if (isset($identifierMap[$identifier])) {
-                $duplicatesInBatch[] = $identifier;
-                $errors[] = "Duplicate identifier '$identifier' found in the current batch (items $identifierMap[$identifier] and $itemIndex)";
-            } else {
-                $identifierMap[$identifier] = $itemIndex;
-            }
-        }
-    }
-    
-    // Process each item
-    foreach ($omekaData as $itemIndex => $itemData) {
-        $identifier = $this->extractIdentifierFromItemData($itemData);
-        
-        if ($identifier && in_array($identifier, $duplicatesInBatch)) {
-            $skippedItems[] = [
-                'index' => $itemIndex,
-                'identifier' => $identifier,
-                'reason' => 'Duplicate identifier in current batch'
-            ];
-            continue;
-        }
-        
-        // Check if item with this identifier already exists in the item set
-        if ($identifier && $itemSetId && $this->itemExistsWithIdentifier($identifier, $itemSetId)) {
-            $skippedItems[] = [
-                'index' => $itemIndex,
-                'identifier' => $identifier,
-                'reason' => 'Item with this identifier already exists in the item set'
-            ];
-            $errors[] = "Skipped item $itemIndex: An item with identifier '$identifier' already exists in item set #$itemSetId";
-            continue;
-        }
-
-        $fullUrl = rtrim($omekaBaseUrl, '/') . '/items' . 
-                   '?key_identity=' . urlencode($omekaKeyIdentity) .
-                   '&key_credential=' . urlencode($omekaKeyCredential);
-        
-        $client->setUri($fullUrl);
-        $client->setRawBody(json_encode($itemData));
-        $response = $client->send();
-
-        if (!$response->isSuccess()) {
-            $errors[] = 'Failed to create item ' . ($itemIndex + 1) . ': ' . 
-                         $response->getStatusCode() . ' - ' . $response->getBody();
-   
-        } else {
-            $createdItem = json_decode($response->getBody(), true);
-            if ($createdItem && isset($createdItem['o:id'])) { 
-                $itemId = $createdItem['o:id'];
-                $this->attachMediaToItem($createdItem['o:id']);
-                
-                                
-            } else {
-                
-                $itemId = null; 
-   
-            }
-            
-            $this->attachMediaToItem($itemId);
-            
-            $createdItems[] = $createdItem;
-   
-        }
-    }
-
-    if ($itemSetId && !empty($createdItems) && $this->excavationData) {
-        $this->updateItemSetWithExcavationInfo($itemSetId, $this->excavationData);
-    }
-
-    if (!empty($skippedItems)) {
-   
-    }
-
-    return [
-        'errors' => $errors,
-        'created_items' => $createdItems,
-        'skipped_items' => $skippedItems
-    ];
-}
-/**
- * This method checks if an item with the given identifier already exists in the specified item set.
- * It searches for items with the identifier and returns true if found, false otherwise.
- * @param string $identifier The identifier to check for
- * @param int $itemSetId The ID of the item set to search in
- * @return bool True if an item with the identifier exists, false otherwise
- */
-private function itemExistsWithIdentifier($identifier, $itemSetId) {
-    try {
-   
-        $searchParams = [
-            'property' => [
-                [
-                    'property' => 10,
-                    'type' => 'eq',
-                    'text' => $identifier
-                ]
-            ],
-            'item_set_id' => $itemSetId,
-            'limit' => 1
-        ];
-        
-        $response = $this->api()->search('items', $searchParams);
-        $totalItems = $response->getTotalResults();
-        
-        if ($totalItems > 0) {
-            $items = $response->getContent();
-            $existingItem = $items[0];
-   
-            return true;
-        }
-        
-   
-        return false;
-    } catch (\Exception $e) {
-   
-        return false; 
-    }
-}
-
-/**
- * This method extracts the identifier from item data.
- * @param mixed $itemData
- * @return string|null The identifier value if found, null otherwise
- */
-private function extractIdentifierFromItemData($itemData) {
-    if (isset($itemData['dcterms:identifier'])) {
-        foreach ($itemData['dcterms:identifier'] as $identifierData) {
-            if (isset($identifierData['@value'])) {
-                return $identifierData['@value'];
-            }
-        }
-    }
-    return null;
-}
-/**
- * this method attaches media files to the created item in Omeka S.
- * @param mixed $itemId
- * @return void
- */
-private function attachMediaToItem($itemId) {
-   
-    
-    if ($this->uploadedFiles && isset($this->uploadedFiles['name']) && is_array($this->uploadedFiles['name'])) {
-   
-        
-        for ($i = 0; $i < count($this->uploadedFiles['name']); $i++) {
-            if ($this->uploadedFiles['error'][$i] === UPLOAD_ERR_OK) {
-                $tempFile = $this->uploadedFiles['tmp_name'][$i];
-                $filename = $this->uploadedFiles['name'][$i];
-                $mimeType = $this->uploadedFiles['type'][$i];
-                
-   
-                
-                try {
-                    // Create the media via Omeka API
-                    $mediaData = [
-                        'o:ingester' => 'upload',
-                        'o:item' => ['o:id' => $itemId],
-                        'dcterms:title' => [
-                            [
-                                'type' => 'literal',
-                                'property_id' => 1, 
-                                '@value' => $filename
-                            ]
-                        ]
-                    ];
-                    
-                    $tempDir = sys_get_temp_dir();
-                    $targetPath = $tempDir . '/' . uniqid('omeka_upload_') . '_' . basename($filename);
-                    if (copy($tempFile, $targetPath)) {
-   
-                        
-                        $_FILES = [
-                            'file' => [
-                                'name' => [$filename],
-                                'type' => [$mimeType],
-                                'tmp_name' => [$targetPath],
-                                'error' => [0],
-                                'size' => [filesize($tempFile)]
-                            ]
-                        ];
-                        
-                        $response = $this->api()->create('media', $mediaData);
-   
-                    } else {
-   
-                    }
-                } catch (\Exception $e) {
-   
-                }
-            } else {
-   
-            }
-        }
-    }
-}
-
 
 /**
  * This method retrieves the archaeologist options from the RDF data.

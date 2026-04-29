@@ -5,8 +5,9 @@ namespace AddTriplestore\Controller\Site;
 use AddTriplestore\Service\GraphDbHttpService;
 use AddTriplestore\Service\Ingestion\OmekaIngestionService;
 use AddTriplestore\Service\Ingestion\OmekaResourceLookupService;
+use AddTriplestore\Service\Ingestion\OmekaRestSubmissionService;
 use AddTriplestore\Service\MegalodConfig;
-use AddTriplestore\Service\OmekaApiCredentialService;
+use AddTriplestore\Service\Ttl\ExcavationTtlBuilder;
 use AddTriplestore\Service\Ttl\TtlUriHelper;
 use AddTriplestore\Service\Ttl\TtlUriNormalizer;
 use AddTriplestore\Service\Ttl\XmlToTtlPipeline;
@@ -23,24 +24,26 @@ class IndexControllerFactory implements FactoryInterface
         $router = $container->get(RouteStackInterface::class);
         $megalodConfig = $container->get(MegalodConfig::class);
         $graphDbHttp = $container->get(GraphDbHttpService::class);
-        $omekaApiCredentials = $container->get(OmekaApiCredentialService::class);
         $ttlUriHelper = $container->get(TtlUriHelper::class);
+        $excavationTtlBuilder = $container->get(ExcavationTtlBuilder::class);
         $ttlUriNormalizer = $container->get(TtlUriNormalizer::class);
         $xmlToTtlPipeline = $container->get(XmlToTtlPipeline::class);
         $omekaResourceLookup = $container->get(OmekaResourceLookupService::class);
         $omekaIngestion = $container->get(OmekaIngestionService::class);
+        $omekaRestSubmission = $container->get(OmekaRestSubmissionService::class);
 
         return new IndexController(
             $router,
             $httpClient,
             $megalodConfig,
             $graphDbHttp,
-            $omekaApiCredentials,
             $ttlUriHelper,
+            $excavationTtlBuilder,
             $ttlUriNormalizer,
             $xmlToTtlPipeline,
             $omekaResourceLookup,
-            $omekaIngestion
+            $omekaIngestion,
+            $omekaRestSubmission
         );
     }
 }

@@ -99,6 +99,32 @@ final class OmekaResourceLookupService
     }
 
     /**
+     * Whether an item in the given item set already has this exact dcterms:identifier value (property 10, eq).
+     * Used for REST create idempotency — unlike findItemByIdentifier(), this does not try variations or title search.
+     */
+    public function itemExistsWithDctermsIdentifierInItemSet(string $identifier, int $itemSetId): bool
+    {
+        try {
+            $searchParams = [
+                'property' => [
+                    [
+                        'property' => 10,
+                        'type' => 'eq',
+                        'text' => $identifier,
+                    ],
+                ],
+                'item_set_id' => $itemSetId,
+                'limit' => 1,
+            ];
+            $response = $this->api->search('items', $searchParams);
+
+            return $response->getTotalResults() > 0;
+        } catch (\Exception $e) {
+            return false;
+        }
+    }
+
+    /**
      * @return list<string>
      */
     public function generateIdentifierVariations(string $identifier): array

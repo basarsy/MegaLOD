@@ -58,14 +58,13 @@ MegaLOD/
 
 The `AddTriplestore` module connects Omeka S to a **GraphDB** triplestore, enables SPARQL access, and drives upload/validation of excavation and artefact data. **Credentials and base URIs** come from environment variables and `graphdb.config.php`—there are **no insecure defaults** (e.g. no `admin/admin` fallbacks); see the module README for the full list.
 
-Implementation is **service-oriented** (Laminas `service_manager`): GraphDB HTTP (upload, SHACL check, authenticated SPARQL), Megalod/GraphDB config, XML→Turtle conversion, RDF→Omeka S item payloads, and Omeka API item lookup live under `modules/AddTriplestore/src/Service/`. The site controller orchestrates HTTP actions; heavy RDF and API mapping logic is kept out of the controller where possible.
-
 **Setup:** Copy `graphdb.config.php.dist` to `graphdb.config.php` and set values or matching env vars. Use root `.env.example` as a checklist for MegaLOD-related variables (`MEGALOD_PUBLIC_BASE_URI`, `GRAPHDB_BASE_URL`, Omeka API keys, etc.); see `modules/AddTriplestore/README.md` for detail.
+
+**Module layout:** Heavy lifting lives in `modules/AddTriplestore/src/Service/` (GraphDB HTTP, RDF→Omeka ingestion, REST batch item create, TTL builders such as `ExcavationTtlBuilder` using `MegalodConfig` for public base URIs). The site `IndexController` mainly orchestrates requests and delegates to those services.
 
 ```
 software/omeka-s/modules/AddTriplestore/config/
-├── graphdb.config.php.dist   # Template (tracked) — copy and configure
-├── graphdb.config.php        # Live config (git-ignored) — never commit
+├── graphdb.config.php.dist
 ├── module.ini
 └── module.config.php
 ```
@@ -76,12 +75,6 @@ software/omeka-s/modules/AddTriplestore/config/
 - **PURL vs this repository:** The hostname `purl.org` is administered separately. Opening [https://purl.org/megalod](https://purl.org/megalod) may redirect to a GitHub tree that is **not** this repo. **Maintainers here do not control that redirect.** For the ontology files, MAP, and software in this project, treat **[github.com/basarsy/MegaLOD](https://github.com/basarsy/MegaLOD)** as the source of truth you clone and branch from.
 - **CI (data):** On push/PR to `main` / `master` / `develop`, **RDF validation** runs Turtle parsing on `metadata-schemes/` and `ves/`, and SHACL validation of sample graphs against `AddTriplestore/asset/shacl-v1.1/shacl.ttl` (`scripts/validate_turtle.py`, `scripts/validate_shacl_samples.py`).
 - **CI (software):** **Quality gates** run PHP syntax checks on `software/omeka-s/modules/AddTriplestore`, `composer audit` (security advisories) for `software/omeka-s`, and **Gitleaks** secret scanning. Failing jobs block merges once those checks are required on the branch.
-
-## Project status (high level)
-
-**In place:** repository layout and ownership; guest ACL and CSRF hardening on the module; env-driven secrets and URIs; ontology/VES alignment with namespace policy; RDF+SHACL CI; AddTriplestore refactor toward smaller controllers and injectable services; software quality gates above.
-
-**Still ahead before treating production deploy as “done”:** further extraction of large TTL generation and Omeka REST batch (`sendToOmekaS` / media) logic into services; automated PHPUnit (or equivalent) tests for critical flows; documentation/runbook consistency (compatibility matrix); optional static analysis and stricter branch protection. Treat deployment as gated on your internal pre-deploy checklist, not only on green CI.
 
 ## Getting Started
 
