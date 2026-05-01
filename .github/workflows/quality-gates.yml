@@ -41,10 +41,11 @@ jobs:
       - uses: shivammathur/setup-php@v2
         with:
           php-version: "8.2"
-          tools: composer:v2
+          # Composer ≥2.8 provides composer audit --abandoned=report (omit on 2.7.x abandoned-only exit failures).
+          tools: composer:2.8.12
           coverage: none
 
-      # Fail only on security advisories; abandoned packages (common in Omeka/Laminas) exit 2 by default.
+      # Fail only on security advisories; abandoned packages (Omeka/Laminas) are reported without failing exit.
       - name: composer audit (locked dependencies)
         run: composer audit --locked --no-dev --abandoned=report --format=json
 
@@ -59,3 +60,35 @@ jobs:
       - uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  phpunit-addtriplestore:
+    name: PHPUnit + PHPStan (AddTriplestore)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: software/omeka-s
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          tools: composer:v2
+          coverage: none
+
+      - name: Composer install (dev for PHPUnit)
+        run: composer install --no-interaction --ignore-platform-reqs
+
+      - name: OmekaItemPayloadSupport sanity script
+        run: php modules/AddTriplestore/test/omeka_item_payload_support_test.php
+
+      - name: PHPUnit module tests
+        run: ./vendor/bin/phpunit -c modules/AddTriplestore/phpunit.xml
+
+      - name: Download PHPStan
+        run: |
+          set -euo pipefail
+          curl -sSL "https://github.com/phpstan/phpstan/releases/download/2.1.32/phpstan.phar" -o /tmp/phpstan.phar
+
+      - name: PHPStan AddTriplestore Service layer
+        run: php /tmp/phpstan.phar analyse --memory-limit=512M -c modules/AddTriplestore/phpstan.neon.dist

@@ -5,7 +5,7 @@ namespace AddTriplestore\Service\Ingestion;
 /**
  * Transforms Turtle payloads into Omeka S API item payloads (extracted from IndexController).
  */
-final class OmekaIngestionService
+class OmekaIngestionService
 {
     /** @var string */
     private $localBaseUri;

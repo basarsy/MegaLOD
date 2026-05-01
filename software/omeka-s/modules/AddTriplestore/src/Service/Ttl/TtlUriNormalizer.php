@@ -7,7 +7,7 @@ use AddTriplestore\Service\MegalodConfig;
 /**
  * Rewrites canonical public-base URIs in Turtle to local item-set-scoped URIs.
  */
-final class TtlUriNormalizer
+class TtlUriNormalizer
 {
     /** @var MegalodConfig */
     private $megalodConfig;

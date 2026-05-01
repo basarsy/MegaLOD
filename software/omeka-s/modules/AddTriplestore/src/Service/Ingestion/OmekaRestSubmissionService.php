@@ -13,7 +13,7 @@ use Omeka\Api\Manager as ApiManager;
  * Skip-if-exists uses OmekaResourceLookupService::itemExistsWithDctermsIdentifierInItemSet() (property 10, exact eq),
  * not findItemByIdentifier(), so behavior matches the pre-refactor controller (no title fallback or identifier variations).
  */
-final class OmekaRestSubmissionService
+class OmekaRestSubmissionService
 {
     /** @var OmekaApiCredentialService */
     private $credentials;

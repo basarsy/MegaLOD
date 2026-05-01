@@ -1,0 +1,8 @@
+parameters:
+    level: 1
+    paths:
+        - src/Service
+    treatPhpDocTypesAsCertain: false
+
+bootstrapFiles:
+    - ../../vendor/autoload.php

@@ -70,4 +70,9 @@ final class MegalodConfig
     {
         return $this->graphdbBaseUrl . '/repositories/' . $this->graphdbRepository;
     }
+
+    public function getGraphdbStatementsEndpoint(): string
+    {
+        return $this->graphdbBaseUrl . '/repositories/' . $this->graphdbRepository . '/statements';
+    }
 }

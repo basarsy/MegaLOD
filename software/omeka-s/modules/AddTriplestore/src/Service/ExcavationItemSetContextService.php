@@ -8,7 +8,7 @@ use Omeka\Settings\SiteSettings;
 /**
  * Excavation identifiers and location resolution scoped to the current site (settings + GraphDB + Omeka API).
  */
-final class ExcavationItemSetContextService
+class ExcavationItemSetContextService
 {
     /** @var SiteSettings */
     private $siteSettings;

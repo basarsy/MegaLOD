@@ -8,7 +8,7 @@ use Omeka\Api\Representation\ItemRepresentation;
 /**
  * Omeka API lookups shared by RDF→Omeka ingestion and site controllers (SRP: item resolution only).
  */
-final class OmekaResourceLookupService
+class OmekaResourceLookupService
 {
     /** @var ApiManager */
     private $api;
@@ -16,6 +16,18 @@ final class OmekaResourceLookupService
     public function __construct(ApiManager $api)
     {
         $this->api = $api;
+    }
+
+    /**
+     * Read a single Omeka item by numeric id for site/forms (archaeologist picklist enrichment).
+     */
+    public function readItem(int $itemId): ?ItemRepresentation
+    {
+        try {
+            return $this->api->read('items', $itemId)->getContent();
+        } catch (\Exception $e) {
+            return null;
+        }
     }
 
     /**
@@ -95,6 +107,33 @@ final class OmekaResourceLookupService
             return null;
         } catch (\Exception $e) {
             return null;
+        }
+    }
+
+    /**
+     * Whether any item has this exact dcterms:identifier (property 10, eq), regardless of item set.
+     */
+    public function itemExistsWithDctermsIdentifier(string $identifier): bool
+    {
+        if ($identifier === '') {
+            return false;
+        }
+
+        try {
+            $response = $this->api->search('items', [
+                'property' => [
+                    [
+                        'property' => 10,
+                        'type' => 'eq',
+                        'text' => $identifier,
+                    ],
+                ],
+                'limit' => 1,
+            ]);
+
+            return $response->getTotalResults() > 0;
+        } catch (\Exception $e) {
+            return false;
         }
     }
 

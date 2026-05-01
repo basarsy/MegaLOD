@@ -2,19 +2,28 @@
 
 namespace AddTriplestore;
 
+use AddTriplestore\Service\GraphDbHttpService;
+use AddTriplestore\Service\MegalodConfig;
 use Laminas\EventManager\SharedEventManagerInterface;
 use Laminas\Mvc\Controller\AbstractController;
 use Laminas\Mvc\MvcEvent;
 use Laminas\ServiceManager\ServiceLocatorInterface;
-use Laminas\Http\Client;
 use Omeka\Module\AbstractModule;
 use Omeka\Permissions\Assertion\IsSelfAssertion;
 
 class Module extends AbstractModule
 {
     private $processedDeletions = [];
-    private $graphdbCredentials = null;
-    private $graphdbConfig = null;
+
+    private function meg(): MegalodConfig
+    {
+        return $this->getServiceLocator()->get(MegalodConfig::class);
+    }
+
+    private function graphDb(): GraphDbHttpService
+    {
+        return $this->getServiceLocator()->get(GraphDbHttpService::class);
+    }
 
     /**
      * Get module configuration
@@ -26,125 +35,19 @@ class Module extends AbstractModule
         return include __DIR__ . '/config/module.config.php';
     }
 
-    /**
-     * Load GraphDB write credentials from config file or environment.
-     * Throws RuntimeException if no credentials are available.
-     *
-     * @return array{username: string, password: string}
-     * @throws \RuntimeException
-     */
-    private function loadGraphDBCredentials()
-    {
-        if ($this->graphdbCredentials !== null) {
-            return $this->graphdbCredentials;
-        }
-
-        $configFile = __DIR__ . '/config/graphdb.config.php';
-        if (file_exists($configFile)) {
-            $config = include $configFile;
-            if (is_array($config)
-                && !empty($config['username']) && !empty($config['password'])
-                && $config['username'] !== 'CHANGE_ME'
-                && $config['password'] !== 'CHANGE_ME') {
-                $this->graphdbCredentials = [
-                    'username' => $config['username'],
-                    'password' => $config['password'],
-                ];
-                return $this->graphdbCredentials;
-            }
-        }
-
-        $user = getenv('GRAPHDB_USERNAME');
-        $pass = getenv('GRAPHDB_PASSWORD');
-        if (!empty($user) && !empty($pass)) {
-            $this->graphdbCredentials = ['username' => $user, 'password' => $pass];
-            return $this->graphdbCredentials;
-        }
-
-        throw new \RuntimeException(
-            'GraphDB credentials are not configured. '
-            . 'Set GRAPHDB_USERNAME/GRAPHDB_PASSWORD environment variables or '
-            . 'configure modules/AddTriplestore/config/graphdb.config.php.'
-        );
-    }
-
-    /**
-     * Load GraphDB connection config (base URL, repository, public base URI).
-     *
-     * @return array{graphdb_base_url: string, graphdb_repository: string, megalod_public_base_uri: string}
-     * @throws \RuntimeException
-     */
-    private function loadGraphdbConfig(): array
-    {
-        if ($this->graphdbConfig !== null) {
-            return $this->graphdbConfig;
-        }
-
-        $configFile = __DIR__ . '/config/graphdb.config.php';
-        $fileConfig = [];
-        if (file_exists($configFile)) {
-            $loaded = include $configFile;
-            if (is_array($loaded)) {
-                $fileConfig = $loaded;
-            }
-        }
-
-        $baseUrl = $fileConfig['graphdb_base_url'] ?? null;
-        if (empty($baseUrl) || $baseUrl === 'CHANGE_ME') {
-            $baseUrl = getenv('GRAPHDB_BASE_URL') ?: null;
-        }
-        if (empty($baseUrl) || $baseUrl === 'CHANGE_ME') {
-            $host = getenv('GRAPHDB_HOST');
-            $port = getenv('GRAPHDB_PORT');
-            if ($host && $port) {
-                $baseUrl = "http://$host:$port";
-            }
-        }
-        if (empty($baseUrl) || $baseUrl === 'CHANGE_ME') {
-            throw new \RuntimeException(
-                'GraphDB connection is not configured. '
-                . 'Set GRAPHDB_BASE_URL (or GRAPHDB_HOST + GRAPHDB_PORT) environment variables.'
-            );
-        }
-
-        $repo = $fileConfig['graphdb_repository'] ?? null;
-        if (empty($repo) || $repo === 'CHANGE_ME') {
-            $repo = getenv('GRAPHDB_REPOSITORY') ?: null;
-        }
-        if (empty($repo) || $repo === 'CHANGE_ME') {
-            throw new \RuntimeException(
-                'GraphDB repository is not configured. Set GRAPHDB_REPOSITORY environment variable.'
-            );
-        }
-
-        $publicBase = $fileConfig['megalod_public_base_uri'] ?? null;
-        if (empty($publicBase) || $publicBase === 'CHANGE_ME') {
-            $publicBase = getenv('MEGALOD_PUBLIC_BASE_URI') ?: 'https://purl.org/megalod/';
-        }
-
-        $this->graphdbConfig = [
-            'graphdb_base_url'        => rtrim($baseUrl, '/'),
-            'graphdb_repository'      => $repo,
-            'megalod_public_base_uri' => rtrim($publicBase, '/') . '/',
-        ];
-        return $this->graphdbConfig;
-    }
-
     private function getGraphdbStatementsEndpoint(): string
     {
-        $c = $this->loadGraphdbConfig();
-        return $c['graphdb_base_url'] . '/repositories/' . $c['graphdb_repository'] . '/statements';
+        return $this->meg()->getGraphdbStatementsEndpoint();
     }
 
     private function getGraphdbQueryEndpoint(): string
     {
-        $c = $this->loadGraphdbConfig();
-        return $c['graphdb_base_url'] . '/repositories/' . $c['graphdb_repository'];
+        return $this->meg()->getGraphdbQueryEndpoint();
     }
 
     private function getPublicBaseUri(): string
     {
-        return $this->loadGraphdbConfig()['megalod_public_base_uri'];
+        return $this->meg()->getMegalodPublicBaseUri();
     }
 
 /**
@@ -633,7 +536,10 @@ WHERE {
 LIMIT 50";
 
         try {
-            $response = $this->executeSparqlQuery($this->getGraphdbStatementsEndpoint(), $query);
+            $response = $this->graphDb()->postSparqlSelectRawResponse($this->getGraphdbQueryEndpoint(), $query);
+            if ($response === null) {
+                throw new \RuntimeException('GraphDB SELECT request failed during debugGraphContents.');
+            }
             $results = json_decode($response->getBody(), true);
             
             if (isset($results['results']['bindings'])) {
@@ -727,7 +633,10 @@ LIMIT 50";
             
 
             $countQuery = $this->buildCountQuery($graphUri, $identifier, $graphId);
-            $countResponse = $this->executeSparqlQuery($baseDataGraphUri, $countQuery);
+            $countResponse = $this->graphDb()->postSparqlSelectRawResponse($this->getGraphdbQueryEndpoint(), $countQuery);
+            if ($countResponse === null) {
+                throw new \RuntimeException('GraphDB COUNT request failed.');
+            }
             
             $countData = json_decode($countResponse->getBody(), true);
             $tripleCount = 0;
@@ -754,7 +663,10 @@ LIMIT 50";
                     $this->debugGraphContents($fallbackGraph, $identifier);
                     
                     $fallbackCountQuery = $this->buildCountQuery($fallbackGraph, $identifier, $graphId);
-                    $fallbackCountResponse = $this->executeSparqlQuery($baseDataGraphUri, $fallbackCountQuery);
+                    $fallbackCountResponse = $this->graphDb()->postSparqlSelectRawResponse($this->getGraphdbQueryEndpoint(), $fallbackCountQuery);
+                    if ($fallbackCountResponse === null) {
+                        continue;
+                    }
                     $fallbackCountData = json_decode($fallbackCountResponse->getBody(), true);
                     
                     if ($fallbackCountData && isset($fallbackCountData['results']['bindings']) && 
@@ -780,7 +692,10 @@ LIMIT 50";
                     error_log("✓ SUCCESS: Deleted $tripleCount triples for identifier '$identifier'", 3, OMEKA_PATH . '/logs/finalDelete.log');
                     
 
-                    $verifyCountResponse = $this->executeSparqlQuery($this->getGraphdbQueryEndpoint(), $countQuery);
+                    $verifyCountResponse = $this->graphDb()->postSparqlSelectRawResponse($this->getGraphdbQueryEndpoint(), $countQuery);
+                    if ($verifyCountResponse === null) {
+                        throw new \RuntimeException('GraphDB verification COUNT failed.');
+                    }
                     $verifyCountData = json_decode($verifyCountResponse->getBody(), true);
                     if ($verifyCountData && isset($verifyCountData['results']['bindings']) && 
                         !empty($verifyCountData['results']['bindings'])) {
@@ -838,33 +753,6 @@ WHERE {
 }";
 }
 
-    /**
-     * This method executes a SPARQL query against the GraphDB endpoint.
-     * @param mixed $endpoint
-     * @param mixed $query
-     * @return \Laminas\Http\Response
-     */
-    private function executeSparqlQuery($endpoint, $query) {
-        $credentials = $this->loadGraphDBCredentials();
-
-        $client = new Client();
-        $client->setMethod('POST');
-        $client->setUri(str_replace('/statements', '', $endpoint));
-        $client->setHeaders([
-            'Content-Type' => 'application/sparql-query',
-            'Accept' => 'application/json',
-            'Authorization' => 'Basic ' . base64_encode($credentials['username'] . ':' . $credentials['password']),
-        ]);
-        $client->setRawBody($query);
-        
-        try {
-            $response = $client->send();
-            return $response;
-        } catch (\Exception $e) {
-            error_log("Exception when executing SPARQL query: " . $e->getMessage(), 3, OMEKA_PATH . '/logs/finalDelete.log');
-            throw $e;
-        }
-    }
 /*This method deletes a resource from GraphDB using comprehensive patterns.
  * It handles various cases where the item URI can be subject, predicate, or object.
  * @param mixed $endpoint
@@ -994,21 +882,12 @@ WHERE {
      */
     private function executeSparqlUpdate($endpoint, $query)
     {
-        $credentials = $this->loadGraphDBCredentials();
+        $response = $this->graphDb()->postSparqlUpdate($endpoint, $query);
 
-        $client = new Client();
-        $client->setMethod('POST');
-        $client->setUri($endpoint);
-        $client->setHeaders([
-            'Content-Type' => 'application/sparql-update',
-            'Accept' => 'application/json',
-            'Authorization' => 'Basic ' . base64_encode($credentials['username'] . ':' . $credentials['password']),
-        ]);
-        $client->setRawBody($query);
-        
         try {
-            $response = $client->send();
-            
+            if ($response === null) {
+                throw new \RuntimeException('GraphDB SPARQL UPDATE request failed.');
+            }
 
             $statusCode = $response->getStatusCode();
             if ($response->isSuccess()) {
@@ -1018,7 +897,7 @@ WHERE {
                 error_log($errorMsg, 3, OMEKA_PATH . '/logs/finalDelete.log');
                 throw new \Exception($errorMsg);
             }
-            
+
             return $response;
         } catch (\Exception $e) {
             error_log("Exception when executing SPARQL query: " . $e->getMessage(), 3, OMEKA_PATH . '/logs/finalDelete.log');

@@ -3,13 +3,14 @@
 namespace AddTriplestore\Service;
 
 use Laminas\Http\Client;
+use Laminas\Http\Response;
 use Laminas\Log\Logger;
 use Laminas\Log\Writer\Stream;
 
 /**
  * GraphDB HTTP operations used by the site controller (SHACL check, Turtle upload, SPARQL JSON).
  */
-final class GraphDbHttpService
+class GraphDbHttpService
 {
     /** @var MegalodConfig */
     private $megalodConfig;
@@ -201,6 +202,88 @@ final class GraphDbHttpService
             }
 
             return null;
+        } catch (\Exception $e) {
+            return null;
+        }
+    }
+
+    /**
+     * SPARQL CONSTRUCT returning Turtle (legacy IndexController::executeConstructQuery).
+     * No Authorization header, matching prior site download behaviour.
+     */
+    public function postConstructAsTurtle(string $sparql): ?string
+    {
+        try {
+            $client = new Client();
+            $client->setUri($this->megalodConfig->getGraphdbQueryEndpoint());
+            $client->setMethod('POST');
+            $client->setHeaders([
+                'Content-Type' => 'application/sparql-query',
+                'Accept' => 'text/turtle',
+            ]);
+            $client->setRawBody($sparql);
+            $response = $client->send();
+            if (!$response->isSuccess()) {
+                return null;
+            }
+            $ttlData = $response->getBody();
+            if (strpos($ttlData, '@prefix') === false) {
+                $helper = new \AddTriplestore\Service\Ttl\TtlUriHelper();
+
+                $ttlData = $helper->getTtlPrefixes() . "\n" . $ttlData;
+            }
+
+            return $ttlData;
+        } catch (\Exception $e) {
+            return null;
+        }
+    }
+
+    /**
+     * Authenticated SPARQL UPDATE (legacy Module::executeSparqlUpdate), POST body is update only.
+     *
+     * @return \Laminas\Http\Response|null
+     */
+    public function postSparqlUpdate(?string $repositoryStatementsUrl, string $sparqlUpdateBody)
+    {
+        $uri = $repositoryStatementsUrl ?: $this->megalodConfig->getGraphdbBaseUrl()
+            . '/repositories/' . $this->megalodConfig->getGraphdbRepository() . '/statements';
+        try {
+            $client = new Client();
+            $client->setMethod('POST');
+            $client->setUri($uri);
+            $creds = $this->credentials->getWriteCredentials();
+            $client->setHeaders([
+                'Content-Type' => 'application/sparql-update',
+                'Accept' => 'application/json',
+                'Authorization' => 'Basic ' . base64_encode($creds['username'] . ':' . $creds['password']),
+            ]);
+            $client->setRawBody($sparqlUpdateBody);
+
+            return $client->send();
+        } catch (\Exception $e) {
+            return null;
+        }
+    }
+
+    /**
+     * Authenticated SPARQL SELECT with Accept application/json (legacy Module::executeSparqlQuery response).
+     */
+    public function postSparqlSelectRawResponse(string $endpointOrQueryRepo, string $query): ?\Laminas\Http\Response
+    {
+        try {
+            $creds = $this->credentials->getWriteCredentials();
+            $client = new Client();
+            $client->setMethod('POST');
+            $client->setUri(str_replace('/statements', '', $endpointOrQueryRepo));
+            $client->setHeaders([
+                'Content-Type' => 'application/sparql-query',
+                'Accept' => 'application/json',
+                'Authorization' => 'Basic ' . base64_encode($creds['username'] . ':' . $creds['password']),
+            ]);
+            $client->setRawBody($query);
+
+            return $client->send();
         } catch (\Exception $e) {
             return null;
         }

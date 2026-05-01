@@ -2,18 +2,29 @@
 
 namespace AddTriplestore\Controller\Site;
 
+use AddTriplestore\Service\Encounter\EncounterEventService;
+use AddTriplestore\Service\ExcavationItemSetContextService;
 use AddTriplestore\Service\GraphDbHttpService;
+use AddTriplestore\Service\Ingestion\CollectingFormToArrowheadMapper;
+use AddTriplestore\Service\Ingestion\CollectingFormToExcavationDataMapper;
 use AddTriplestore\Service\Ingestion\OmekaIngestionService;
 use AddTriplestore\Service\Ingestion\OmekaResourceLookupService;
-use AddTriplestore\Service\ExcavationItemSetContextService;
-use AddTriplestore\Service\Ingestion\CollectingFormToArrowheadMapper;
 use AddTriplestore\Service\Ingestion\OmekaRestSubmissionService;
 use AddTriplestore\Service\MegalodConfig;
+use AddTriplestore\Service\OmekaSiteResourceService;
+use AddTriplestore\Service\SiteMetadataOptionsService;
+use AddTriplestore\Service\SiteUserAuthSupport;
+use AddTriplestore\Service\Ttl\ArrowheadCanonicalTtlExporter;
 use AddTriplestore\Service\Ttl\ArrowheadTtlBuilder;
 use AddTriplestore\Service\Ttl\ExcavationTtlBuilder;
+use AddTriplestore\Service\Ttl\TtlContentInspectionService;
+use AddTriplestore\Service\Ttl\TtlPresentationService;
 use AddTriplestore\Service\Ttl\TtlUriHelper;
 use AddTriplestore\Service\Ttl\TtlUriNormalizer;
+use AddTriplestore\Service\Ttl\UploadedFileToTtlConverter;
+use AddTriplestore\Service\Ttl\VocabularyLabelService;
 use AddTriplestore\Service\Ttl\XmlToTtlPipeline;
+use AddTriplestore\Service\Upload\TtlUploadOrchestrationService;
 use Interop\Container\ContainerInterface;
 use Laminas\ServiceManager\Factory\FactoryInterface;
 use Laminas\Http\Client;
@@ -37,6 +48,17 @@ class IndexControllerFactory implements FactoryInterface
         $omekaRestSubmission = $container->get(OmekaRestSubmissionService::class);
         $excavationContext = $container->get(ExcavationItemSetContextService::class);
         $collectingToArrowheadMapper = $container->get(CollectingFormToArrowheadMapper::class);
+        $ttlContentInspection = $container->get(TtlContentInspectionService::class);
+        $uploadedFileToTtlConverter = $container->get(UploadedFileToTtlConverter::class);
+        $encounterEventService = $container->get(EncounterEventService::class);
+        $siteMetadataOptions = $container->get(SiteMetadataOptionsService::class);
+        $vocabularyLabelService = $container->get(VocabularyLabelService::class);
+        $ttlPresentationService = $container->get(TtlPresentationService::class);
+        $arrowheadCanonicalTtlExporter = $container->get(ArrowheadCanonicalTtlExporter::class);
+        $collectingToExcavationMapper = $container->get(CollectingFormToExcavationDataMapper::class);
+        $omekaSiteResource = $container->get(OmekaSiteResourceService::class);
+        $siteUserAuthSupport = $container->get(SiteUserAuthSupport::class);
+        $ttlUploadOrchestrationService = $container->get(TtlUploadOrchestrationService::class);
 
         return new IndexController(
             $router,
@@ -52,7 +74,18 @@ class IndexControllerFactory implements FactoryInterface
             $omekaIngestion,
             $omekaRestSubmission,
             $excavationContext,
-            $collectingToArrowheadMapper
+            $collectingToArrowheadMapper,
+            $ttlContentInspection,
+            $uploadedFileToTtlConverter,
+            $encounterEventService,
+            $siteMetadataOptions,
+            $vocabularyLabelService,
+            $ttlPresentationService,
+            $arrowheadCanonicalTtlExporter,
+            $collectingToExcavationMapper,
+            $omekaSiteResource,
+            $siteUserAuthSupport,
+            $ttlUploadOrchestrationService
         );
     }
 }
