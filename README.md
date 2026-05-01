@@ -60,7 +60,7 @@ The `AddTriplestore` module connects Omeka S to a **GraphDB** triplestore, enabl
 
 **Setup:** Copy `graphdb.config.php.dist` to `graphdb.config.php` and set values or matching env vars. Use root `.env.example` as a checklist for MegaLOD-related variables (`MEGALOD_PUBLIC_BASE_URI`, `GRAPHDB_BASE_URL`, Omeka API keys, etc.); see `modules/AddTriplestore/README.md` for detail.
 
-**Module layout:** Heavy lifting lives in `modules/AddTriplestore/src/Service/` (GraphDB HTTP, RDF→Omeka ingestion, REST batch item create, TTL builders such as `ExcavationTtlBuilder` using `MegalodConfig` for public base URIs). The site `IndexController` mainly orchestrates requests and delegates to those services.
+**Module layout:** Heavy lifting lives in `software/omeka-s/modules/AddTriplestore/src/Service/` (GraphDB HTTP, RDF→Omeka ingestion, REST batch item create, `ExcavationItemSetContextService` for site mappings and location SPARQL, TTL builders `ExcavationTtlBuilder` / `ArrowheadTtlBuilder`, collecting-form mapping). The site `IndexController` orchestrates HTTP and delegates to these services (P1 refactor: thin controller for this slice; further extractions may remain).
 
 ```
 software/omeka-s/modules/AddTriplestore/config/

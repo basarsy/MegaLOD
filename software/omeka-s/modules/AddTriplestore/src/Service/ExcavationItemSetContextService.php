@@ -137,17 +137,14 @@ final class ExcavationItemSetContextService
     }
 
     /**
-     * @return string|null
+     * Shared location resolution: one SELECT for full row, optional second SELECT for canonical URI, same semantics as legacy getRealLocationUriFromExcavation.
+     *
+     * @return array{0: ?string, 1: ?array}
      */
-    public function getRealLocationUriFromExcavation($itemSetId)
+    private function resolveLocationUriAndRow($itemSetId, ?string $excavationIdentifier): array
     {
-        if (!$itemSetId) {
-            return null;
-        }
-
-        $excavationIdentifier = $this->getExcavationIdentifierFromItemSet($itemSetId);
-        if (!$excavationIdentifier) {
-            return null;
+        if (!$itemSetId || !$excavationIdentifier) {
+            return [null, null];
         }
 
         $locationData = $this->getLocationDataFromExcavation($itemSetId);
@@ -159,7 +156,7 @@ final class ExcavationItemSetContextService
             && empty($locationData['lat'])
             && empty($locationData['long'])
         )) {
-            return null;
+            return [null, null];
         }
 
         $graphUri = $this->publicBaseUri . $itemSetId . '/';
@@ -181,12 +178,24 @@ final class ExcavationItemSetContextService
             $results = $this->graphDbHttpService->selectSparqlBindings($locationQuery);
 
             if (!empty($results) && isset($results[0]['locationUri'])) {
-                return $results[0]['locationUri']['value'];
+                return [$results[0]['locationUri']['value'], $locationData];
             }
         } catch (\Exception $e) {
         }
 
-        return "{$this->localBaseUri}{$itemSetId}/excavation/{$excavationIdentifier}/location/excavation-location";
+        $fallback = "{$this->localBaseUri}{$itemSetId}/excavation/{$excavationIdentifier}/location/excavation-location";
+
+        return [$fallback, $locationData];
+    }
+
+    /**
+     * @return string|null
+     */
+    public function getRealLocationUriFromExcavation($itemSetId)
+    {
+        $excavationIdentifier = $this->getExcavationIdentifierFromItemSet($itemSetId);
+
+        return $this->resolveLocationUriAndRow($itemSetId, $excavationIdentifier)[0];
     }
 
     /**
@@ -195,8 +204,7 @@ final class ExcavationItemSetContextService
     public function resolveForArrowheadTtl(string $itemSetId): array
     {
         $excavationIdentifier = $this->getExcavationIdentifierFromItemSet($itemSetId);
-        $realLocationUri = $this->getRealLocationUriFromExcavation($itemSetId);
-        $locationData = $realLocationUri ? $this->getLocationDataFromExcavation($itemSetId) : null;
+        [$realLocationUri, $locationData] = $this->resolveLocationUriAndRow($itemSetId, $excavationIdentifier);
 
         return [$excavationIdentifier, $realLocationUri, $locationData];
     }

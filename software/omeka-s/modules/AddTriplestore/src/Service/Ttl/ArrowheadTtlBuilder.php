@@ -6,7 +6,8 @@ use AddTriplestore\Service\Ingestion\OmekaResourceLookupService;
 
 /**
  * Turtle generation for arrowhead form payloads (item graph + related excavation entities).
- * Site-specific identifiers and SPARQL lookups are resolved by the controller (or a future context service) and passed in.
+ * Resolved excavation id, GraphDB location URI, and location row are supplied by {@see \AddTriplestore\Service\ExcavationItemSetContextService}
+ * (controller keeps a thin `processArrowheadFormData` adapter).
  */
 final class ArrowheadTtlBuilder
 {
@@ -30,8 +31,8 @@ final class ArrowheadTtlBuilder
     }
 
     /**
-     * @param array<string, mixed> $formData normalized arrowhead field map (same keys as legacy processArrowheadFormData)
-     * @param array<string, mixed>|null $locationData row from SPARQL/Omeka context; optional even when $realLocationUri is set
+     * @param array<string, mixed> $formData normalized arrowhead field map; optional key `location` is the collecting-form placeholder URI when GraphDB has no resolved location
+     * @param array<string, mixed>|null $locationData row from SPARQL; used with $realLocationUri for Location declarations
      */
     public function buildFromFormData(
         array $formData,
@@ -46,6 +47,10 @@ final class ArrowheadTtlBuilder
 
         $baseUri = "{$this->localBaseUri}{$itemSetId}/item/{$arrowheadId}";
 
+        $excavationIdForPaths = $excavationIdentifier ?? 'excavation';
+        $placeholderLocation = !empty($formData['location']) ? (string) $formData['location'] : null;
+        $effectiveLocationUri = $realLocationUri ?: $placeholderLocation;
+
         $arrowheadUri = $baseUri;
         $morphologyUri = "$baseUri/morphology/$arrowheadId";
         $chippingUri = "$baseUri/chipping/$arrowheadId";
@@ -59,29 +64,19 @@ final class ArrowheadTtlBuilder
         if (!empty($formData['selected_square'])) {
             $squareItemId = $formData['selected_square'];
             $realSquareId = $this->omekaResourceLookupService->getRealIdentifierFromOmekaItem($squareItemId);
-            $excavationIdForSquare = $excavationIdentifier ?? 'excavation';
             if ($realSquareId) {
-                $squareUri = "{$this->localBaseUri}{$itemSetId}/excavation/{$excavationIdForSquare}/square/{$realSquareId}";
+                $squareUri = "{$this->localBaseUri}{$itemSetId}/excavation/{$excavationIdForPaths}/square/{$realSquareId}";
                 $ttl .= "    excav:foundInSquare <$squareUri>;\n";
             }
         }
 
-        if ($realLocationUri) {
-            $ttl .= "    excav:foundInLocation <$realLocationUri>;\n";
+        if ($effectiveLocationUri) {
+            $ttl .= "    excav:foundInLocation <$effectiveLocationUri>;\n";
         }
 
         if ($excavationIdentifier) {
             $excavationUri = "{$this->localBaseUri}{$itemSetId}/excavation/{$excavationIdentifier}";
             $ttl .= "    excav:foundInExcavation <$excavationUri>;\n";
-        }
-
-        if (
-            $realLocationUri
-            && empty($formData['selected_square'])
-            && empty($formData['selected_context'])
-            && empty($formData['selected_svu'])
-        ) {
-            $ttl .= "    excav:foundInLocation <$realLocationUri>;\n";
         }
 
         if (!empty($formData['arrowhead_annotation'])) {
@@ -315,13 +310,15 @@ final class ArrowheadTtlBuilder
             }
 
             $ttl = rtrim($ttl, " ;\n") . " .\n\n";
+        } elseif ($placeholderLocation) {
+            $ttl .= "<{$placeholderLocation}> a excav:Location .\n\n";
         }
 
         if (!empty($formData['selected_square'])) {
             $squareItemId = $formData['selected_square'];
             $realSquareId = $this->omekaResourceLookupService->getRealIdentifierFromOmekaItem($squareItemId);
             if ($realSquareId) {
-                $squareUri = "{$this->localBaseUri}{$itemSetId}/excavation/{$excavationIdentifier}/square/{$realSquareId}";
+                $squareUri = "{$this->localBaseUri}{$itemSetId}/excavation/{$excavationIdForPaths}/square/{$realSquareId}";
                 $ttl .= "<$squareUri> a excav:Square ;\n";
                 $ttl .= "    dct:identifier \"$realSquareId\"^^xsd:literal .\n\n";
             }
@@ -331,7 +328,7 @@ final class ArrowheadTtlBuilder
             $contextItemId = $formData['selected_context'];
             $realContextId = $this->omekaResourceLookupService->getRealIdentifierFromOmekaItem($contextItemId);
             if ($realContextId) {
-                $contextUri = "{$this->localBaseUri}{$itemSetId}/excavation/{$excavationIdentifier}/context/{$realContextId}";
+                $contextUri = "{$this->localBaseUri}{$itemSetId}/excavation/{$excavationIdForPaths}/context/{$realContextId}";
                 $ttl .= "<$contextUri> a excav:Context ;\n";
                 $ttl .= "    dct:identifier \"$realContextId\"^^xsd:literal .\n\n";
             }
@@ -342,7 +339,7 @@ final class ArrowheadTtlBuilder
             $realSvuId = $this->omekaResourceLookupService->getRealIdentifierFromOmekaItem($svuItemId);
 
             if ($realSvuId) {
-                $svuUri = "{$this->localBaseUri}{$itemSetId}/excavation/{$excavationIdentifier}/svu/{$realSvuId}";
+                $svuUri = "{$this->localBaseUri}{$itemSetId}/excavation/{$excavationIdForPaths}/svu/{$realSvuId}";
                 $ttl .= "<$svuUri> a excav:StratigraphicVolumeUnit ;\n";
                 $ttl .= "    dct:identifier \"$realSvuId\"^^xsd:literal .\n\n";
             }
