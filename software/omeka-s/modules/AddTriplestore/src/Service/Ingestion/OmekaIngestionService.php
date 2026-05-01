@@ -351,12 +351,14 @@ class OmekaIngestionService
 
 
     /**
-     * This method determines the item type based on the subject type.
-     * @param string $subjectType The type of the subject (e.g., 'arrowhead', 'item', etc.)
-     * @return string The corresponding item type for Omeka S
+     * Resolves chipping resources from RDF and merges them into $itemData.
+     *
+     * @param mixed $rdfData
+     * @param mixed $subject
+     * @param array<string, mixed> $itemData
+     * @param int|null $currentItemSetId
      */
-
-    private function extractCompleteChippingData($rdfData, $subject, &$itemData, $currentItemSetId) {
+    private function extractCompleteChippingData($rdfData, $subject, &$itemData, $currentItemSetId): void {
        
         
         // First try to find chipping via hasChipping property
@@ -1198,14 +1200,9 @@ class OmekaIngestionService
     }
 
     /**
-     * This method extracts the display value for a context resource.
      * @param mixed $rdfData
-     * @param mixed $subject
-     * @param mixed $itemData
-     * @param mixed $currentItemSetId
-     * @return void
+     * @return string|null
      */
-
     private function extractResourceIdentifier($rdfData, $resourceUri) {
        
        
@@ -1280,13 +1277,9 @@ class OmekaIngestionService
 
 
     /**
-     * Extract the square coordinates from the RDF data.
      * @param mixed $rdfData
-     * @param mixed $subject
-     * @param mixed $itemData
-     * @return void
+     * @return array{name: string|null, description: string|null}|null
      */
-
     private function extractSvuData($rdfData, $svuUri) {
         $data = [
             'name' => null,
@@ -1692,14 +1685,13 @@ class OmekaIngestionService
     }
 
     /**
-     * Identifies the main subjects in the RDF data.
-     * This method checks for specific patterns in the RDF data to determine the main subjects.
-     * @param mixed $rdfData The RDF data array
-     * @param int|null $itemSetId The ID of the item set, if available
-     * @return array An associative array of main subjects and their types
+     * Populates arrowhead-related fields on $itemData from RDF (measurements, context, media, etc.).
+     *
+     * @param mixed $rdfData
+     * @param mixed $subject
+     * @param array<string, mixed> $itemData
      */
-
-    private function processArrowheadData($rdfData, $subject, &$itemData) {
+    private function processArrowheadData($rdfData, $subject, &$itemData): void {
 
         // Current item set context
         $currentItemSetId = $this->getCurrentItemSetContext();
@@ -2358,9 +2350,8 @@ class OmekaIngestionService
         
         $currentItemSetId = $this->getCurrentItemSetContext();
 
+        $locationUri = null;
 
-        
-        
         // Extract location information
         if (isset($rdfData[$subject]['http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#hasLocation'])) {
             foreach ($rdfData[$subject]['http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#hasLocation'] as $locObj) {
@@ -2509,80 +2500,77 @@ class OmekaIngestionService
         $archaeologistPropertyUris = [
             'https://purl.org/megalod/ms/excavation/hasPersonInCharge'
         ];
-        
 
+        if ($locationUri !== null && (
+            isset($rdfData[$locationUri]['https://purl.org/megalod/ms/excavation/hasGPSCoordinates'])
+            || ($currentItemSetId !== null && isset($rdfData[$locationUri]["{$this->localBaseUri}{$currentItemSetId}/excavation/hasGPSCoordinates"]))
+        )) {
+            $gpsPropertyUris = [
+                'https://purl.org/megalod/ms/excavation/hasGPSCoordinates',
+                'excav:hasGPSCoordinates',
+            ];
+            if ($currentItemSetId !== null) {
+                $gpsPropertyUris[] = "{$this->localBaseUri}{$currentItemSetId}/excavation/hasGPSCoordinates";
+            }
 
+            foreach ($gpsPropertyUris as $gpsPropertyUri) {
+                if (isset($rdfData[$locationUri][$gpsPropertyUri])) {
+                    foreach ($rdfData[$locationUri][$gpsPropertyUri] as $gpsObj) {
+                        if ($gpsObj['type'] === 'uri' && isset($rdfData[$gpsObj['value']])) {
+                            $gpsUri = $gpsObj['value'];
+                            $lat = null;
+                            $long = null;
 
-        
-    if (isset($rdfData[$locationUri]['https://purl.org/megalod/ms/excavation/hasGPSCoordinates']) ||
-        isset($rdfData[$locationUri]["{$this->localBaseUri}$currentItemSetId/excavation/hasGPSCoordinates"])) {
-        
-    $gpsPropertyUris = [
-        'https://purl.org/megalod/ms/excavation/hasGPSCoordinates',
-        "{$this->localBaseUri}$currentItemSetId/excavation/hasGPSCoordinates",
-        'excav:hasGPSCoordinates' 
-    ];
-        
-        foreach ($gpsPropertyUris as $gpsPropertyUri) {
-            if (isset($rdfData[$locationUri][$gpsPropertyUri])) {
-                foreach ($rdfData[$locationUri][$gpsPropertyUri] as $gpsObj) {
-                    if ($gpsObj['type'] === 'uri' && isset($rdfData[$gpsObj['value']])) {
-                        $gpsUri = $gpsObj['value'];
-                        
-                        if (isset($rdfData[$gpsUri]['http://www.w3.org/2003/01/geo/wgs84_pos#lat'])) {
-                            foreach ($rdfData[$gpsUri]['http://www.w3.org/2003/01/geo/wgs84_pos#lat'] as $latObj) {
-                                if ($latObj['type'] === 'literal') {
-                                    $lat = $latObj['value'];
-       
-                                    
-                                    if (!isset($itemData['GPS Latitude'])) {
-                                        $itemData['GPS Latitude'] = [];
+                            if (isset($rdfData[$gpsUri]['http://www.w3.org/2003/01/geo/wgs84_pos#lat'])) {
+                                foreach ($rdfData[$gpsUri]['http://www.w3.org/2003/01/geo/wgs84_pos#lat'] as $latObj) {
+                                    if ($latObj['type'] === 'literal') {
+                                        $lat = $latObj['value'];
+
+                                        if (!isset($itemData['GPS Latitude'])) {
+                                            $itemData['GPS Latitude'] = [];
+                                        }
+                                        $itemData['GPS Latitude'][] = [
+                                            'type' => 'literal',
+                                            'property_id' => 257,
+                                            '@value' => $lat
+                                        ];
                                     }
-                                    $itemData['GPS Latitude'][] = [
-                                        'type' => 'literal',
-                                        'property_id' => 257, 
-                                        '@value' => $lat
-                                    ];
                                 }
                             }
-                        }
-                        
-                        if (isset($rdfData[$gpsUri]['http://www.w3.org/2003/01/geo/wgs84_pos#long'])) {
-                            foreach ($rdfData[$gpsUri]['http://www.w3.org/2003/01/geo/wgs84_pos#long'] as $longObj) {
-                                if ($longObj['type'] === 'literal') {
-                                    $long = $longObj['value'];
-       
-                                    
-                                    if (!isset($itemData['GPS Longitude'])) {
-                                        $itemData['GPS Longitude'] = [];
+
+                            if (isset($rdfData[$gpsUri]['http://www.w3.org/2003/01/geo/wgs84_pos#long'])) {
+                                foreach ($rdfData[$gpsUri]['http://www.w3.org/2003/01/geo/wgs84_pos#long'] as $longObj) {
+                                    if ($longObj['type'] === 'literal') {
+                                        $long = $longObj['value'];
+
+                                        if (!isset($itemData['GPS Longitude'])) {
+                                            $itemData['GPS Longitude'] = [];
+                                        }
+                                        $itemData['GPS Longitude'][] = [
+                                            'type' => 'literal',
+                                            'property_id' => 259,
+                                            '@value' => $long
+                                        ];
                                     }
-                                    $itemData['GPS Longitude'][] = [
-                                        'type' => 'literal',
-                                        'property_id' => 259, 
-                                        '@value' => $long
-                                    ];
                                 }
                             }
-                        }
-                        
-                        if (isset($lat) && isset($long)) {
-                            if (!isset($itemData['GPS Coordinates'])) {
-                                $itemData['GPS Coordinates'] = [];
+
+                            if (isset($lat) && isset($long)) {
+                                if (!isset($itemData['GPS Coordinates'])) {
+                                    $itemData['GPS Coordinates'] = [];
+                                }
+                                $itemData['GPS Coordinates'][] = [
+                                    'type' => 'literal',
+                                    'property_id' => 7664,
+                                    '@value' => "Latitude: $lat, Longitude: $long"
+                                ];
                             }
-                            $itemData['GPS Coordinates'][] = [
-                                'type' => 'literal',
-                                'property_id' => 7664, 
-                                '@value' => "Latitude: $lat, Longitude: $long"
-                            ];
-                            
-       
                         }
                     }
+                    break;
                 }
-                break;
             }
         }
-    }
         
         if ($currentItemSetId) {
             $archaeologistPropertyUris[] = "{$this->localBaseUri}$currentItemSetId/excavation/hasPersonInCharge";

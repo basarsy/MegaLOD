@@ -268,7 +268,7 @@ final class ArrowheadTtlBuilder
                         }
                     }
                 }
-            } elseif (!empty($images)) {
+            } else {
                 $imageParts = parse_url($images);
                 if (isset($imageParts['path'])) {
                     $originalFilename = basename($imageParts['path']);
