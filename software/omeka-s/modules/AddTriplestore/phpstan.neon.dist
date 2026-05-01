@@ -3,6 +3,5 @@ parameters:
     paths:
         - src/Service
     treatPhpDocTypesAsCertain: false
-
-bootstrapFiles:
-    - ../../vendor/autoload.php
+    bootstrapFiles:
+        - ../../vendor/autoload.php
