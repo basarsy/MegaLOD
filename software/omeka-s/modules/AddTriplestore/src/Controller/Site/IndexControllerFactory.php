@@ -5,8 +5,11 @@ namespace AddTriplestore\Controller\Site;
 use AddTriplestore\Service\GraphDbHttpService;
 use AddTriplestore\Service\Ingestion\OmekaIngestionService;
 use AddTriplestore\Service\Ingestion\OmekaResourceLookupService;
+use AddTriplestore\Service\ExcavationItemSetContextService;
+use AddTriplestore\Service\Ingestion\CollectingFormToArrowheadMapper;
 use AddTriplestore\Service\Ingestion\OmekaRestSubmissionService;
 use AddTriplestore\Service\MegalodConfig;
+use AddTriplestore\Service\Ttl\ArrowheadTtlBuilder;
 use AddTriplestore\Service\Ttl\ExcavationTtlBuilder;
 use AddTriplestore\Service\Ttl\TtlUriHelper;
 use AddTriplestore\Service\Ttl\TtlUriNormalizer;
@@ -26,11 +29,14 @@ class IndexControllerFactory implements FactoryInterface
         $graphDbHttp = $container->get(GraphDbHttpService::class);
         $ttlUriHelper = $container->get(TtlUriHelper::class);
         $excavationTtlBuilder = $container->get(ExcavationTtlBuilder::class);
+        $arrowheadTtlBuilder = $container->get(ArrowheadTtlBuilder::class);
         $ttlUriNormalizer = $container->get(TtlUriNormalizer::class);
         $xmlToTtlPipeline = $container->get(XmlToTtlPipeline::class);
         $omekaResourceLookup = $container->get(OmekaResourceLookupService::class);
         $omekaIngestion = $container->get(OmekaIngestionService::class);
         $omekaRestSubmission = $container->get(OmekaRestSubmissionService::class);
+        $excavationContext = $container->get(ExcavationItemSetContextService::class);
+        $collectingToArrowheadMapper = $container->get(CollectingFormToArrowheadMapper::class);
 
         return new IndexController(
             $router,
@@ -39,11 +45,14 @@ class IndexControllerFactory implements FactoryInterface
             $graphDbHttp,
             $ttlUriHelper,
             $excavationTtlBuilder,
+            $arrowheadTtlBuilder,
             $ttlUriNormalizer,
             $xmlToTtlPipeline,
             $omekaResourceLookup,
             $omekaIngestion,
-            $omekaRestSubmission
+            $omekaRestSubmission,
+            $excavationContext,
+            $collectingToArrowheadMapper
         );
     }
 }

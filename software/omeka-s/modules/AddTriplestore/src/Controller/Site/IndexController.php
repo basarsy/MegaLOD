@@ -4,11 +4,14 @@ namespace AddTriplestore\Controller\Site;
 
 require 'vendor/autoload.php';
 
+use AddTriplestore\Service\ExcavationItemSetContextService;
 use AddTriplestore\Service\GraphDbHttpService;
+use AddTriplestore\Service\Ingestion\CollectingFormToArrowheadMapper;
 use AddTriplestore\Service\Ingestion\OmekaIngestionService;
 use AddTriplestore\Service\Ingestion\OmekaResourceLookupService;
 use AddTriplestore\Service\Ingestion\OmekaRestSubmissionService;
 use AddTriplestore\Service\MegalodConfig;
+use AddTriplestore\Service\Ttl\ArrowheadTtlBuilder;
 use AddTriplestore\Service\Ttl\ExcavationTtlBuilder;
 use AddTriplestore\Service\Ttl\TtlUriHelper;
 use AddTriplestore\Service\Ttl\TtlUriNormalizer;
@@ -41,6 +44,9 @@ class IndexController extends AbstractActionController
     /** @var ExcavationTtlBuilder */
     private $excavationTtlBuilder;
 
+    /** @var ArrowheadTtlBuilder */
+    private $arrowheadTtlBuilder;
+
     /** @var TtlUriNormalizer */
     private $ttlUriNormalizer;
 
@@ -55,6 +61,12 @@ class IndexController extends AbstractActionController
 
     /** @var OmekaRestSubmissionService */
     private $omekaRestSubmissionService;
+
+    /** @var ExcavationItemSetContextService */
+    private $excavationItemSetContextService;
+
+    /** @var CollectingFormToArrowheadMapper */
+    private $collectingFormToArrowheadMapper;
 
     private $uploadedFiles = null;
 
@@ -74,22 +86,28 @@ class IndexController extends AbstractActionController
         GraphDbHttpService $graphDbHttpService,
         TtlUriHelper $ttlUriHelper,
         ExcavationTtlBuilder $excavationTtlBuilder,
+        ArrowheadTtlBuilder $arrowheadTtlBuilder,
         TtlUriNormalizer $ttlUriNormalizer,
         XmlToTtlPipeline $xmlToTtlPipeline,
         OmekaResourceLookupService $omekaResourceLookupService,
         OmekaIngestionService $omekaIngestionService,
-        OmekaRestSubmissionService $omekaRestSubmissionService
+        OmekaRestSubmissionService $omekaRestSubmissionService,
+        ExcavationItemSetContextService $excavationItemSetContextService,
+        CollectingFormToArrowheadMapper $collectingFormToArrowheadMapper
     ) {
         $this->router = $router;
         $this->httpClient = $httpClient;
         $this->graphDbHttpService = $graphDbHttpService;
         $this->ttlUriHelper = $ttlUriHelper;
         $this->excavationTtlBuilder = $excavationTtlBuilder;
+        $this->arrowheadTtlBuilder = $arrowheadTtlBuilder;
         $this->ttlUriNormalizer = $ttlUriNormalizer;
         $this->xmlToTtlPipeline = $xmlToTtlPipeline;
         $this->omekaResourceLookupService = $omekaResourceLookupService;
         $this->omekaIngestionService = $omekaIngestionService;
         $this->omekaRestSubmissionService = $omekaRestSubmissionService;
+        $this->excavationItemSetContextService = $excavationItemSetContextService;
+        $this->collectingFormToArrowheadMapper = $collectingFormToArrowheadMapper;
 
         $this->graphdbEndpoint = $megalodConfig->getGraphdbRdfGraphsServiceUrl();
         $this->graphdbQueryEndpoint = $megalodConfig->getGraphdbQueryEndpoint();
@@ -771,7 +789,7 @@ class IndexController extends AbstractActionController
             $uploadedFiles = $_FILES['file']['54'];
         }
         // transform the form data to Arrowhead data format
-        $arrowheadData = $this->transformCollectingFormToArrowheadData($formData);
+        $arrowheadData = $this->collectingFormToArrowheadMapper->map($formData);
 
         
         if (!empty($arrowheadData)) {
@@ -845,7 +863,7 @@ class IndexController extends AbstractActionController
 
                 $result = $this->processFileUpload($this->getRequest(), $uploadType, $itemSetId);
 
-                $excavationId = $this->getExcavationIdentifierFromItemSet($itemSetId);
+                $excavationId = $this->excavationItemSetContextService->getExcavationIdentifierFromItemSet($itemSetId);
 
                 if ($excavationId && strpos($result, 'successfully') !== false) {
                     $result = "Arrowhead was successfully added to excavation $excavationId (Item Set #$itemSetId). You can upload another or click Exit when done.";
@@ -942,7 +960,7 @@ class IndexController extends AbstractActionController
                         $itemSetId = $newItemSet->id();
                         
                         // Store the mapping between item set and excavation
-                        $this->storeMappingBetweenItemSetAndExcavation($itemSetId, $excavationIdentifier);
+                        $this->excavationItemSetContextService->storeMappingBetweenItemSetAndExcavation($itemSetId, $excavationIdentifier);
                         
                         // Upload TTL data to triplestore
                         $result = $this->uploadTtlData($ttlData, $itemSetId);
@@ -1961,7 +1979,7 @@ private function normalizeUris($ttlData, $itemSetId)
         $ttlData,
         $itemSetId,
         function ($setId) {
-            return $this->getExcavationIdentifierFromItemSet($setId);
+            return $this->excavationItemSetContextService->getExcavationIdentifierFromItemSet($setId);
         }
     );
 }
@@ -2024,701 +2042,24 @@ private function createExcavationItemSetData($excavationIdentifier, $excavationD
     return $itemSetData;
 }
 
-
-/** Retrieves the SVU identifier from an Omeka item.
- * This method attempts to extract the identifier using various strategies.
- * @param int $itemId The ID of the Omeka item
- * @return string The extracted or generated SVU identifier
- */
-private function getSvuIdentifierFromOmekaItem($itemId) {
-    try {
-   
-        
-        $item = $this->api()->read('items', $itemId)->getContent();
-        
-        // get the dcterms value 
-        $values = $item->values();
-        
-        if (isset($values['dcterms:identifier'])) {
-            foreach ($values['dcterms:identifier'] as $value) {
-                if ($value instanceof \Omeka\Api\Representation\ValueRepresentation) {
-                    $identifier = $value->value();
-   
-                    return $identifier;
-                }
-            }
-        }
-        
-        // Extract from title 
-        $title = $item->displayTitle();
-   
-        
-        // SVU-specific patterns
-        $svuPatterns = [
-            '/\b(Layer-\d+)\b/',          
-            '/\b(CV-\d+-\d+)\b/',           
-            '/\b(SVU-\d+)\b/',            
-            '/\b(svu-\d+)\b/',            
-            '/\b(SU-\d+)\b/',             
-        ];
-        
-        foreach ($svuPatterns as $pattern) {
-            if (preg_match($pattern, $title, $matches)) {
-   
-                return $matches[1];
-            }
-        }
-        
-        // Check resource class to confirm this is an SVU
-        $resourceClass = $item->resourceClass();
-        if ($resourceClass) {
-            $className = strtolower($resourceClass->label());
-   
-            
-            if (strpos($className, 'stratigraphic') !== false || 
-                strpos($className, 'svu') !== false || 
-                strpos($className, 'unit') !== false) {
-                
-                // Generate SVU  identifier
-                $identifier = "Layer-" . str_pad($itemId % 100, 2, '0', STR_PAD_LEFT);
-   
-                return $identifier;
-            }
-        }
-        
-        if (preg_match('/\b(\d+)\b/', $title, $matches)) {
-            $identifier = "Layer-" . str_pad($matches[1], 2, '0', STR_PAD_LEFT);
-   
-            return $identifier;
-        }
-        
-        // fallback for SVU just as precaution
-        $fallbackIdentifier = "Layer-" . str_pad($itemId % 100, 2, '0', STR_PAD_LEFT);
-   
-        return $fallbackIdentifier;
-        
-    } catch (\Exception $e) {
-   
-        return "Layer-" . str_pad($itemId % 100, 2, '0', STR_PAD_LEFT);
-    }
-}
-
-/**
- * Processes archaeological context selections and generates TTL RDF.
- * This method handles the selection of squares, contexts, and locations,
- * generating appropriate URIs and declarations for each.
- * @param array $formData The form data containing selections
- * @param string $itemSetId The ID of the item set
- * @param string $baseUri The base URI for the excavation
- * @return array An array containing linked resources and declarations
- */
-private function processArchaeologicalContextSelections($formData, $itemSetId, $baseUri)
-{
-    $linkedResources = [];
-    $declarations = []; 
-    $existingDeclarations = []; 
-    
-   
-    
-    // Get excavation identifier
-    $excavationIdentifier = $this->getExcavationIdentifierFromItemSet($itemSetId) ?: "excavation";
-    
-    $excavationBaseUri = "{$this->localBaseUri}$itemSetId/excavation/$excavationIdentifier";
-
-    $realLocationUri = $this->getRealLocationUriFromExcavation($itemSetId);
-    if ($realLocationUri && empty($existingDeclarations['location'])) {
-
-        $encounterDefinition = "";
-        
-        $graphUri = $this->baseDataGraphUri . $itemSetId . "/";
-        $locationQuery = "
-            PREFIX dbo: <http://dbpedia.org/ontology/>
-            PREFIX excav: <https://purl.org/megalod/ms/excavation/>
-            
-            SELECT ?informationName ?district ?parish ?country
-            WHERE {
-                GRAPH <$graphUri> {
-                    <$realLocationUri> a excav:Location .
-                    OPTIONAL { <$realLocationUri> dbo:informationName ?informationName }
-                    OPTIONAL { <$realLocationUri> dbo:district ?district }
-                    OPTIONAL { <$realLocationUri> dbo:parish ?parish }
-                    OPTIONAL { <$realLocationUri> dbo:Country ?country }
-                }
-            }
-            LIMIT 1
-        ";
-        
-        $locationResults = $this->graphDbHttpService->selectSparqlBindings($locationQuery);
-        
-        if (!empty($locationResults)) {
-            $result = $locationResults[0];
-            
-            $encounterDefinition .= "<$realLocationUri> a excav:Location ;\n";
-            
-            if (isset($result['informationName'])) {
-                $encounterDefinition .= "    dbo:informationName \"" . $result['informationName']['value'] . "\"^^xsd:literal ;\n";
-            }
-            
-            if (isset($result['district'])) {
-                $encounterDefinition .= "    dbo:district <" . $result['district']['value'] . "> ;\n";
-            }
-            
-            if (isset($result['parish'])) {
-                $encounterDefinition .= "    dbo:parish <" . $result['parish']['value'] . "> ;\n";
-            }
-            
-            if (isset($result['country'])) {
-                $encounterDefinition .= "    dbo:Country <" . $result['country']['value'] . "> ;\n";
-            }
-            
-            $encounterDefinition = rtrim($encounterDefinition, " ;\n") . " .\n\n";
-            
-            if (isset($result['district'])) {
-                $encounterDefinition .= "<" . $result['district']['value'] . "> a dbo:District .\n";
-            }
-            if (isset($result['parish'])) {
-                $encounterDefinition .= "<" . $result['parish']['value'] . "> a dbo:Parish .\n";
-            }
-            if (isset($result['country'])) {
-                $encounterDefinition .= "<" . $result['country']['value'] . "> a dbo:Country .\n";
-            }
-            
-            $encounterDefinition .= "\n";
-        }
-    }
-    if ($realLocationUri) {
-        $linkedResources['excav:foundInLocation'] = $realLocationUri;
-        
-        if (preg_match('/\/location\/([^\/]+)$/', $realLocationUri, $matches)) {
-            $locationId = $matches[1];
-            $declarations['location'] = [
-                'uri' => $realLocationUri,
-                'id' => $locationId
-            ];
-        }
-    }
-   
-    
-    // Process selected square
-    if (!empty($formData['selected_square'])) {
-        $squareItemId = $formData['selected_square'];
-   
-        
-        $realSquareId = $this->omekaResourceLookupService->getRealIdentifierFromOmekaItem($squareItemId);
-        if ($realSquareId) {
-            $squareUri = "$excavationBaseUri/square/$realSquareId";
-            $linkedResources['excav:foundInSquare'] = $squareUri;
-            
-            $declarations['square'] = [
-                'uri' => $squareUri,
-                'id' => $realSquareId
-            ];
-            
-   
-        }
-    }
-    
-    // Process selected context
-    if (!empty($formData['selected_context'])) {
-        $contextItemId = $formData['selected_context'];
-        $realContextId = $this->omekaResourceLookupService->getRealIdentifierFromOmekaItem($contextItemId);
-        if ($realContextId) {
-            $contextUri = "$excavationBaseUri/context/$realContextId";
-            $linkedResources['excav:foundInContext'] = $contextUri;
-            
-            // Add declaration
-            $declarations['context'] = [
-                'uri' => $contextUri,
-                'id' => $realContextId
-            ];
-            
-   
-        }
-    }
-    
-    if (!empty($formData['selected_svu'])) {
-        $svuItemId = $formData['selected_svu'];
-   
-        
-        $realSvuId = $this->getSvuIdentifierFromOmekaItem($svuItemId);
-   
-        if ($realSvuId) {
-            $svuUri = "$excavationBaseUri/svu/$realSvuId";
-            $linkedResources['excav:foundInSVU'] = $svuUri;
-            
-            $declarations['svu'] = [
-                'uri' => $svuUri,
-                'id' => $realSvuId
-            ];
-            
-   
-        } 
-    }
-    
-    $linkedResources['excav:foundInExcavation'] = $excavationBaseUri;
-    $declarations['excavation'] = [
-        'uri' => $excavationBaseUri,
-        'id' => $excavationIdentifier
-    ];
-    
-    $locationUri = "$excavationBaseUri/location/excavation-location";
-    $linkedResources['excav:foundInLocation'] = $locationUri;
-    $declarations['location'] = [
-        'uri' => $locationUri,
-        'id' => 'excavation-location'
-    ];
-    
-   
-   
-    
-    return [
-        'references' => $linkedResources, 
-        'declarations' => $declarations
-    ];
-}
-
     /**
      * Processes the form data for the arrowhead item.
      * This includes extracting relevant information and generating RDF triples.
      * @param array $formData The form data submitted for the arrowhead
      * @param string $itemSetId The ID of the item set
-     * @return array An array containing the generated RDF triples
+     * @return string Generated Turtle (RDF)
      */
     private function processArrowheadFormData($formData, $itemSetId)
     {
-        
-        $arrowheadId = !empty($formData['arrowhead_identifier']) 
-            ? $formData['arrowhead_identifier'] 
-            : 'AH-' . uniqid();
-        
-        $baseUri = "{$this->localBaseUri}$itemSetId/item/$arrowheadId";
+        [$excavationIdentifier, $realLocationUri, $locationData] = $this->excavationItemSetContextService->resolveForArrowheadTtl((string) $itemSetId);
 
-        $arrowheadUri = $baseUri;
-        $morphologyUri = "$baseUri/morphology/$arrowheadId";
-        $chippingUri = "$baseUri/chipping/$arrowheadId";
-        $excavationUri = "$baseUri";
-        $encounterUri = "$baseUri/encounter/$arrowheadId";
-        //gps uri 
-        $gpsUri = "$baseUri/gps/$arrowheadId";
-        
-        // Build TTL data
-        $ttl = $this->ttlUriHelper->getTtlPrefixes();
-        
-        $contextResult = $this->processArchaeologicalContextSelections($formData, $itemSetId, $baseUri);
-        $linkedResources = $contextResult['references'];
-        $resourceDeclarations = $contextResult['declarations'];
-        
-        $ttl .= "<$arrowheadUri> a ah:Arrowhead, excav:Item;\n";
-        $ttl .= "    dct:identifier \"$arrowheadId\"^^xsd:literal;\n";
-
-        if (!empty($formData['selected_square'])) {
-            $squareItemId = $formData['selected_square'];
-            $realSquareId = $this->omekaResourceLookupService->getRealIdentifierFromOmekaItem($squareItemId);
-            $excavationIdentifier = $this->getExcavationIdentifierFromItemSet($itemSetId) ?: "excavation";
-            if ($realSquareId) {
-                $squareUri = "{$this->localBaseUri}$itemSetId/excavation/$excavationIdentifier/square/$realSquareId";
-                $ttl .= "    excav:foundInSquare <$squareUri>;\n";
-        
-            }
-        }
-
-        $locationUri = $this->getRealLocationUriFromExcavation($itemSetId);
-        if ($locationUri) {
-            $ttl .= "    excav:foundInLocation <$locationUri>;\n";
-        
-        } 
-
-        $excavationIdentifier = $this->getExcavationIdentifierFromItemSet($itemSetId);
-        if ($excavationIdentifier) {
-            $excavationUri = "{$this->localBaseUri}$itemSetId/excavation/$excavationIdentifier";
-            $ttl .= "    excav:foundInExcavation <$excavationUri>;\n";
-        
-        }
-
-        $locationUri = $this->getRealLocationUriFromExcavation($itemSetId);
-        if ($locationUri && empty($formData['selected_square']) && empty($formData['selected_context']) && empty($formData['selected_svu'])) {
-            $ttl .= "    excav:foundInLocation <$locationUri>;\n";
-        
-        }
-
-        
-        if (!empty($formData['arrowhead_annotation'])) {
-            $ttl .= "    dbo:Annotation \"" . $formData['arrowhead_annotation'] . "\"^^xsd:literal;\n";
-        }
-        
-        if (!empty($formData['condition_state'])) {
-            $value = (stripos($formData['condition_state'], 'true') !== false) ? "true" : "false";
-            $ttl .= "    crm:E3_Condition_State \"$value\"^^xsd:boolean;\n";
-        }
-        
-        if (!empty($formData['arrowhead_type'])) {
-            $value = (stripos($formData['arrowhead_type'], 'true') !== false) ? "true" : "false";
-            $ttl .= "    crm:E55_Type \"$value\"^^xsd:boolean;\n";
-        }
-        
-        if (!empty($formData['elongation_index'])) {
-            $ttl .= "    excav:elongationIndex <https://purl.org/megalod/kos/MegaLOD-IndexElongation/" . strtolower($formData['elongation_index']) . ">;\n";
-        }
-
-        // thickness index
-        if (!empty($formData['thickness_index'])) {
-            $ttl .= "    excav:thicknessIndex <https://purl.org/megalod/kos/MegaLOD-IndexThickness/" . strtolower($formData['thickness_index']) . ">;\n";
-        }
-        
-        // Add material
-        if (!empty($formData['arrowhead_material'])) {
-            $ttl .= "    crm:E57_Material <" . $formData['arrowhead_material'] . ">;\n";
-        }
-        
-        if (!empty($formData['arrowhead_shape'])) {
-            $shapeMapping = [
-                'triangle' => 'triangle',
-                'lozenge-shaped' => 'losangular',
-                'losangular' => 'losangular',
-                'stemmed' => 'stemmed'
-            ];
-            
-            $shapeSafe = isset($shapeMapping[$formData['arrowhead_shape']]) 
-                ? $shapeMapping[$formData['arrowhead_shape']] 
-                : strtolower(str_replace('-', '-', $formData['arrowhead_shape']));
-                
-            $ttl .= "    ah:shape <https://purl.org/megalod/kos/ah-shape/$shapeSafe>;\n";
-        }
-        
-        if (!empty($formData['arrowhead_variant'])) {
-            $variantSafe = strtolower($formData['arrowhead_variant']);
-            $ttl .= "    ah:variant <https://purl.org/megalod/kos/ah-variant/$variantSafe>;\n";
-        }
-
-        if (!empty($formData['gps_latitude']) && !empty($formData['gps_longitude'])) {
-            $gpsUri = "$baseUri/gps/$arrowheadId";
-            $ttl .= "    excav:hasGPSCoordinates <$gpsUri>;\n";
-        }
-
-        if (!empty($formData['encounter_date'])) {
-            $ttl .= "    dct:date \"" . $formData['encounter_date'] . "\"^^xsd:literal;\n";
-        }
-        
-
-        $measurementBlocks = "";
-        $processedMeasurements = [];
-
-        $measurements = [
-            'height' => 'height',
-            'width' => 'width', 
-            'weight' => 'weight', 
-        ];
-
-        foreach ($measurements as $measurement => $property) {
-            $valueKey = $measurement;
-            $unitKey = $measurement . '_unit';
-            
-            if (!empty($formData[$valueKey])) {
-                $measurementUri = "$baseUri/typometry/$arrowheadId-$measurement";
-                
-                if ($measurement === 'weight') {
-                    $ttl .= "    schema:weight <$measurementUri>;\n";
-                    $measurementBlocks .= "<$measurementUri> a excav:Weight;\n";
-                    $measurementBlocks .= "    schema:value \"" . $formData[$valueKey] . "\"^^xsd:decimal;\n";
-                    
-                    if (!empty($formData[$unitKey]) && !isset($processedMeasurements[$measurementUri])) {
-                        $weightUnit = $formData[$unitKey];
-                        $measurementBlocks .= "    schema:UnitCode <$weightUnit>;\n";
-                        $processedMeasurements[$measurementUri] = true;
-                    }
-                    $measurementBlocks .= "    .\n\n";
-                } else {
-                    $ttl .= "    schema:$property <$measurementUri>;\n";
-                    $measurementBlocks .= "<$measurementUri> a excav:TypometryValue;\n";
-                    $measurementBlocks .= "    schema:value \"" . $formData[$valueKey] . "\"^^xsd:decimal;\n";
-                    
-                    if (!empty($formData[$unitKey]) && !isset($processedMeasurements[$measurementUri])) {
-                        $measurementBlocks .= "    schema:UnitCode <" . $formData[$unitKey] . ">;\n";
-                        $processedMeasurements[$measurementUri] = true;
-                    }
-                    $measurementBlocks .= "    .\n\n";
-                }
-            }
-        }
-
-        if (!empty($formData['thickness'])) {
-            $thicknessUri = "$baseUri/typometry/$arrowheadId-thickness";
-            if (!isset($processedMeasurements[$thicknessUri])) {
-                $ttl .= "    schema:depth <$thicknessUri>;\n";
-                $measurementBlocks .= "<$thicknessUri> a excav:TypometryValue;\n";
-                $measurementBlocks .= "    schema:value \"" . $formData['thickness'] . "\"^^xsd:decimal;\n";
-                if (!empty($formData['thickness_unit'])) {
-                    $measurementBlocks .= "    schema:UnitCode <" . $formData['thickness_unit'] . ">;\n";
-                }
-                $measurementBlocks .= "    .\n\n";
-                $processedMeasurements[$thicknessUri] = true;
-            }
-        }
-
-        if (!empty($formData['body_length'])) {
-            $bodyLengthUri = "$baseUri/typometry/$arrowheadId-hasBodyLength";
-            if (!isset($processedMeasurements[$bodyLengthUri])) {
-                $ttl .= "    ah:hasBodyLength <$bodyLengthUri>;\n";
-                $measurementBlocks .= "<$bodyLengthUri> a excav:TypometryValue;\n";
-                $measurementBlocks .= "    schema:value \"" . $formData['body_length'] . "\"^^xsd:decimal;\n";
-                if (!empty($formData['body_length_unit'])) {
-                    $measurementBlocks .= "    schema:UnitCode <" . $formData['body_length_unit'] . ">;\n";
-                }
-                $measurementBlocks .= "    .\n\n";
-                $processedMeasurements[$bodyLengthUri] = true;
-            }
-        }
-
-        if (!empty($formData['base_length'])) {
-            $baseLengthUri = "$baseUri/typometry/$arrowheadId-hasBaseLength";
-            if (!isset($processedMeasurements[$baseLengthUri])) {
-                $ttl .= "    ah:hasBaseLength <$baseLengthUri>;\n";
-                $measurementBlocks .= "<$baseLengthUri> a excav:TypometryValue;\n";
-                $measurementBlocks .= "    schema:value \"" . $formData['base_length'] . "\"^^xsd:decimal;\n";
-                if (!empty($formData['base_length_unit'])) {
-                    $measurementBlocks .= "    schema:UnitCode <" . $formData['base_length_unit'] . ">;\n";
-                }
-                $measurementBlocks .= "    .\n\n";
-                $processedMeasurements[$baseLengthUri] = true;
-            }
-        }
-        
-        $hasChippingData = !empty($formData['chipping_mode']) || 
-                        !empty($formData['chipping_amplitude']) || 
-                        !empty($formData['chipping_direction']);
-        
-        if ($hasChippingData) {
-            $ttl .= "    ah:hasChipping <$chippingUri>;\n";
-        }
-        
-        $hasMorphologyData = !empty($formData['point_definition']) || 
-                            !empty($formData['body_symmetry']) || 
-                            !empty($formData['arrowhead_base']);
-        
-        if ($hasMorphologyData) {
-            $ttl .= "    ah:hasMorphology <$morphologyUri>;\n";
-        }
-        
-        $coordinatesData = null;
-        if (!empty($formData['x_coordinate']) && !empty($formData['y_coordinate'])) {
-            $coordinatesUri = "$baseUri/coordinatesInSquare/" . substr($arrowheadId, 3);
-            $ttl .= "    excav:hasCoordinatesInSquare <$coordinatesUri>;\n";
-        
-            $coordinatesData = [
-                'uri' => $coordinatesUri,
-                'x' => $formData['x_coordinate'],
-                'x_unit' => !empty($formData['x_coordinate_unit']) ? $formData['x_coordinate_unit'] : 'CMT',
-                'y' => $formData['y_coordinate'],
-                'y_unit' => !empty($formData['y_coordinate_unit']) ? $formData['y_coordinate_unit'] : 'CMT',
-                'z' => !empty($formData['z_coordinate']) ? $formData['z_coordinate'] : null,
-                'z_unit' => !empty($formData['z_coordinate_unit']) ? $formData['z_coordinate_unit'] : 'CMT'
-            ];
-        }
-        
-        if (!empty($formData['images'])) {
-        $images = $formData['images'];
-        if (is_array($images)) {
-            foreach ($images as $image) {
-                if (!empty($image)) {
-                    $imageParts = parse_url($image);
-                    if (isset($imageParts['path'])) {
-                        $originalFilename = basename($imageParts['path']);
-                        $sanitizedFilename = $this->ttlUriHelper->sanitizeFilenameForUri($originalFilename);
-                        
-                        $imageUri = str_replace($originalFilename, $sanitizedFilename, $image);
-                        $ttl .= "    edm:Webresource <$imageUri>;\n";
-                    } else {
-                        $ttl .= "    edm:Webresource <$image>;\n";
-                    }
-                }
-            }
-        } else if (!empty($images)) {
-            $imageParts = parse_url($images);
-            if (isset($imageParts['path'])) {
-                $originalFilename = basename($imageParts['path']);
-                $sanitizedFilename = $this->ttlUriHelper->sanitizeFilenameForUri($originalFilename);
-                
-                $imageUri = str_replace($originalFilename, $sanitizedFilename, $images);
-                $ttl .= "    edm:Webresource <$imageUri>;\n";
-            } else {
-                $ttl .= "    edm:Webresource <$images>;\n";
-            }
-        }
-    }
-        
-        $ttl .= "    .\n\n";
-
-        // Add entity declarations for referenced resources
-        $ttl .= "\n# =========== RESOURCE DECLARATIONS ===========\n\n";
-        
-        // Excavation declaration
-        $excavationIdentifier = $this->getExcavationIdentifierFromItemSet($itemSetId);
-        if ($excavationIdentifier) {
-            $excavationUri = "{$this->localBaseUri}$itemSetId/excavation/$excavationIdentifier";
-            $ttl .= "<$excavationUri> a excav:Excavation ;\n";
-            $ttl .= "    dct:identifier \"$excavationIdentifier\"^^xsd:literal .\n\n";
-    
-        }
-        
-
-        $locationUri = $this->getRealLocationUriFromExcavation($itemSetId);
-    
-        if ($locationUri) {
-
-            $locationData = $this->getLocationDataFromExcavation($itemSetId);
-        
-            
-            $ttl .= "<$locationUri> a excav:Location ;\n";
-            
-            if ($locationData && !empty($locationData['name'])) {
-                $ttl .= "    dbo:informationName \"" . $locationData['name'] . "\"^^xsd:literal ;\n";
-                
-                if (!empty($locationData['district'])) {
-                    $ttl .= "    dbo:district <" . $locationData['district'] . "> ;\n";
-                }
-                if (!empty($locationData['parish'])) {
-                    $ttl .= "    dbo:parish <" . $locationData['parish'] . "> ;\n";
-                }
-                if (!empty($locationData['country'])) {
-                    $ttl .= "    dbo:Country <" . $locationData['country'] . "> ;\n";
-                }
-            }
-        
-
-            $ttl = rtrim($ttl, " ;\n") . " .\n\n";
-        }
-        
-        if (!empty($formData['selected_square'])) {
-            $squareItemId = $formData['selected_square'];
-            $realSquareId = $this->omekaResourceLookupService->getRealIdentifierFromOmekaItem($squareItemId);
-            if ($realSquareId) {
-                $squareUri = "{$this->localBaseUri}$itemSetId/excavation/$excavationIdentifier/square/$realSquareId";
-                $ttl .= "<$squareUri> a excav:Square ;\n";
-                $ttl .= "    dct:identifier \"$realSquareId\"^^xsd:literal .\n\n";
-    
-            }
-        }
-        
-        if (!empty($formData['selected_context'])) {
-            $contextItemId = $formData['selected_context'];
-            $realContextId = $this->omekaResourceLookupService->getRealIdentifierFromOmekaItem($contextItemId);
-            if ($realContextId) {
-                $contextUri = "{$this->localBaseUri}$itemSetId/excavation/$excavationIdentifier/context/$realContextId";
-                $ttl .= "<$contextUri> a excav:Context ;\n";
-                $ttl .= "    dct:identifier \"$realContextId\"^^xsd:literal .\n\n";
-    
-            }
-        }
-        
-        if (!empty($formData['selected_svu'])) {
-            $svuItemId = $formData['selected_svu'];
-            $realSvuId = $this->omekaResourceLookupService->getRealIdentifierFromOmekaItem($svuItemId);
-    
-            if ($realSvuId) {
-                $svuUri = "{$this->localBaseUri}$itemSetId/excavation/$excavationIdentifier/svu/$realSvuId";
-                $ttl .= "<$svuUri> a excav:StratigraphicVolumeUnit ;\n";
-                $ttl .= "    dct:identifier \"$realSvuId\"^^xsd:literal .\n\n";
-    
-            }
-        }
-
-        if ($coordinatesData) {
-            $ttl .= "<{$coordinatesData['uri']}> a excav:Coordinates;\n";
-            $ttl .= "    schema:value \"{$coordinatesData['x']} {$coordinatesData['x_unit']}\"^^xsd:literal;\n";
-            $ttl .= "    schema:value \"{$coordinatesData['y']} {$coordinatesData['y_unit']}\"^^xsd:literal;\n";
-            
-            if ($coordinatesData['z']) {
-                $ttl .= "    schema:value \"{$coordinatesData['z']} {$coordinatesData['z_unit']}\"^^xsd:literal;\n";
-            }
-            
-            $ttl .= "    .\n\n";
-        }
-
-        if(!empty($formData['gps_latitude']) && !empty($formData['gps_longitude'])) {
-            $ttl .= "<$gpsUri> a excav:GPSCoordinates;\n";
-            $ttl .= "    geo:lat \"" . $formData['gps_latitude'] . "\"^^xsd:decimal;\n";
-            $ttl .= "    geo:long \"" . $formData['gps_longitude'] . "\"^^xsd:decimal;\n";
-            $ttl .= "    .\n\n";
-        }
-
-        if ($hasMorphologyData) {
-            $ttl .= "<$morphologyUri> a ah:Morphology;\n";
-            
-            if (!empty($formData['point_definition'])) {
-                $value = (stripos($formData['point_definition'], 'true') !== false) ? "true" : "false";
-                $ttl .= "    ah:point \"$value\"^^xsd:boolean;\n";
-            }
-            
-            if (!empty($formData['body_symmetry'])) {
-                $value = (stripos($formData['body_symmetry'], 'true') !== false) ? "true" : "false";
-                $ttl .= "    ah:body \"$value\"^^xsd:boolean;\n";
-            }
-            
-            if (!empty($formData['arrowhead_base'])) {
-                $baseSafe = strtolower($formData['arrowhead_base']);
-                $ttl .= "    ah:base <https://purl.org/megalod/kos/ah-base/$baseSafe>;\n";
-            }
-            
-            $ttl .= "    .\n\n";
-        }
-        
-        if ($hasChippingData) {
-            $ttl .= "<$chippingUri> a ah:Chipping;\n";
-            
-            if (!empty($formData['chipping_mode'])) {
-                $modeSafe = strtolower(str_replace('-', '-', $formData['chipping_mode']));
-                $ttl .= "    ah:chippingMode <https://purl.org/megalod/kos/ah-chippingMode/$modeSafe>;\n";
-            }
-            
-            if (!empty($formData['chipping_amplitude'])) {
-                $value = (stripos($formData['chipping_amplitude'], 'true') !== false) ? "true" : "false";
-                $ttl .= "    ah:chippingAmplitude \"$value\"^^xsd:boolean;\n";
-            }
-            
-            if (!empty($formData['chipping_direction'])) {
-                $directionSafe = strtolower($formData['chipping_direction']);
-                $ttl .= "    ah:chippingDirection <https://purl.org/megalod/kos/ah-chippingDirection/$directionSafe>;\n";
-            }
-            
-            if (!empty($formData['chipping_orientation'])) {
-                $value = (stripos($formData['chipping_orientation'], 'true') !== false) ? "true" : "false";
-                $ttl .= "    ah:chippingOrientation \"$value\"^^xsd:boolean;\n";
-            }
-            
-            if (!empty($formData['chipping_delineation'])) {
-                $delineationSafe = strtolower($formData['chipping_delineation']);
-                $ttl .= "    ah:chippingDelineation <https://purl.org/megalod/kos/ah-chippingDelineation/$delineationSafe>;\n";
-            }
-            
-            for ($i = 1; $i <= 3; $i++) {
-                $lateralKey = "chipping_location_lateral_$i";
-                if (!empty($formData[$lateralKey])) {
-                    $locationSafe = strtolower($formData[$lateralKey]);
-                    $ttl .= "    ah:chippingLocationSide <https://purl.org/megalod/kos/ah-chippingLocation/$locationSafe>;\n";
-                }
-            }
-            
-            for ($i = 1; $i <= 3; $i++) {
-                $transversalKey = "chipping_location_transversal_$i";
-                if (!empty($formData[$transversalKey])) {
-                    $locationSafe = strtolower($formData[$transversalKey]);
-                    $ttl .= "    ah:chippingLocationTransversal <https://purl.org/megalod/kos/ah-chippingLocation/$locationSafe>;\n";
-                }
-            }
-            
-            if (!empty($formData['chipping_shape'])) {
-                $shapeSafe = strtolower($formData['chipping_shape']);
-                $ttl .= "    ah:chippingShape <https://purl.org/megalod/kos/ah-chippingShape/$shapeSafe>;\n";
-            }
-            
-            $ttl .= "    .\n\n";
-        }
-        
-        
-        $ttl .= $measurementBlocks;
-    
-
-        return $ttl;
+        return $this->arrowheadTtlBuilder->buildFromFormData(
+            $formData,
+            (string) $itemSetId,
+            $excavationIdentifier,
+            $realLocationUri,
+            $locationData
+        );
     }
 
 
@@ -2737,164 +2078,6 @@ private function uploadTtlDataWithMedia($ttlData, $itemSetId, $uploadedFiles) {
 }
 
 
-
-
-/**
- * This function transforms the collecting form data into the arrowhead data format.
- * @param mixed $formData
- * @return array
- */
-private function transformCollectingFormToArrowheadData($formData)
-{
-   
-
-    $arrowheadData = [];
-    
-    $fieldMappings = [
-        'prompt_53' => 'arrowhead_identifier',    // ID field 
-        'prompt_54' => 'images',                  // Images (empty in your case)
-        'prompt_55' => 'arrowhead_annotation',    // Observations/annotations
-        'prompt_56' => 'condition_state',         // Complete/Broken
-        'prompt_57' => 'weight',                  // Weight value
-        'prompt_58' => 'weight_unit',             // Weight unit
-        'prompt_59' => 'height',                  // Height value
-        'prompt_60' => 'height_unit',             // Height unit
-        'prompt_61' => 'width',                   // Width value
-        'prompt_62' => 'width_unit',              // Width unit
-        'prompt_63' => 'thickness',               // Thickness value
-        'prompt_64' => 'thickness_unit',          // Thickness unit
-        'prompt_65' => 'arrowhead_type',          // Elongate/Short
-        'prompt_66' => 'elongation_index',        // Medium/Elongated/Short
-        'prompt_100' => 'thickness_index',        // Thin/Medium/Thick
-        'prompt_67' => 'gps_latitude',            // GPS latitude 
-        'prompt_68' => 'gps_longitude',           // GPS longitude 
-        'prompt_69' => 'arrowhead_variant',       // Flat/Raised/Thick
-        'prompt_70' => 'arrowhead_shape',         // Triangle/Losangular/Stemmed
-        'prompt_71' => 'point_definition',        // Sharp/Fractured
-        'prompt_72' => 'body_symmetry',           // Symmetrical/Non-symmetrical
-        'prompt_73' => 'arrowhead_base',          // Base type
-        'prompt_74' => 'body_length',             // Body length value
-        'prompt_75' => 'body_length_unit',        // Body length unit
-        'prompt_76' => 'base_length',             // Base length value
-        'prompt_77' => 'base_length_unit',        // Base length unit
-        
-        // Chipping properties
-        'prompt_78' => 'chipping_mode',           // Plane/Parallel/Sub-parallel
-        'prompt_79' => 'chipping_amplitude',      // Marginal/Deep
-        'prompt_80' => 'chipping_direction',      // Direct/Reverse/Bifacial
-        'prompt_81' => 'chipping_orientation',    // Side/Transverse
-        'prompt_82' => 'chipping_delineation',    // Continuous/Composite/Denticulated
-        'prompt_83' => 'chipping_location_lateral_1',    // Distal/Median/Proximal
-        'prompt_84' => 'chipping_location_lateral_2',
-        'prompt_85' => 'chipping_location_lateral_3',
-        'prompt_86' => 'chipping_location_transversal_1', // Distal/Median/Proximal
-        'prompt_87' => 'chipping_location_transversal_2',
-        'prompt_88' => 'chipping_location_transversal_3',
-        'prompt_89' => 'chipping_shape',          // Straight/Convex/Concave/Sinuous
-        
-        // Square coordinates
-        'prompt_90' => 'x_coordinate',
-        'prompt_91' => 'y_coordinate',
-        'prompt_92' => 'z_coordinate',
-        'prompt_93' => 'arrowhead_material',      // Material
-        'prompt_94' => 'x_coordinate_unit',       // X coordinate unit
-        'prompt_95' => 'y_coordinate_unit',       // Y coordinate unit  
-        'prompt_96' => 'z_coordinate_unit',       // Z coordinate unit
-
-        // ENCOUNTER DATe
-        'prompt_99' => 'encounter_date',          // Encounter date mm-dd-aa
-    ];
-
-    foreach ($fieldMappings as $collectingField => $arrowheadField) {
-        if (isset($formData[$collectingField]) && !empty($formData[$collectingField])) {
-            $value = $formData[$collectingField];
-            
-            if (strpos($value, 'True') === 0 || strpos($value, 'true') === 0) {
-                $arrowheadData[$arrowheadField] = 'true';
-            } elseif (strpos($value, 'False') === 0 || strpos($value, 'false') === 0) {
-                $arrowheadData[$arrowheadField] = 'false';
-            } else {
-                $cleanValue = preg_replace('/\s*\([^)]*\)/', '', $value);
-                $arrowheadData[$arrowheadField] = trim($cleanValue);
-            }
-        }
-    }
-    if (!empty($formData['selected_square'])) {
-        $arrowheadData['selected_square'] = $formData['selected_square'];
-   
-    }
-    
-    if (!empty($formData['selected_context'])) {
-        $arrowheadData['selected_context'] = $formData['selected_context'];
-   
-    }
-    
-    if (!empty($formData['selected_svu'])) {
-        $arrowheadData['selected_svu'] = $formData['selected_svu'];
-   
-    }
-
-    if (isset($formData['file']['54']) && is_array($formData['file']['54'])) {
-        $imageFiles = $formData['file']['54'];
-   
-        $imageUrls = [];
-        
-        foreach ($imageFiles as $imageFile) {
-            if (!empty($imageFile)) {
-                
-                $baseUrl = "{$this->localBaseUri}images/";
-                $filename = basename($imageFile);
-                $imageUrls[] = $baseUrl . $filename;
-            }
-        }
-        
-        if (!empty($imageUrls)) {
-            $arrowheadData['images'] = $imageUrls;
-        }
-    }
-
-    $itemSetId = isset($formData['item_set_id']) ? $formData['item_set_id'] : null;
-    
-    if ($itemSetId) {
-        try {
-            $locationUri = $this->getExcavationLocationUri(null, $itemSetId);
-            
-            if ($locationUri) {
-   
-                $arrowheadData['location'] = $locationUri;
-            }
-        } catch (\Exception $e) {
-   
-        }
-    }
-
-    $valuesToCheck = [
-        'thickness' => 'thickness_unit',
-        'body_length' => 'body_length_unit', 
-        'base_length' => 'base_length_unit'
-    ];
-    
-    foreach ($valuesToCheck as $valueField => $unitField) {
-        if (empty($arrowheadData[$valueField]) && isset($arrowheadData[$unitField])) {
-            unset($arrowheadData[$unitField]);
-   
-        }
-    }
-   
-
-    return $arrowheadData;
-}
-
-/**
- * This function gets the excavation location uri
- * @param mixed $excavationId
- * @param mixed $itemSetId
- * @return string
- */
-private function getExcavationLocationUri($excavationId, $itemSetId = null) {
-    $baseId = $itemSetId ?: $excavationId;
-    return "{$this->localBaseUri}$baseId/location/excavation-location";
-}
 
 
 /**
@@ -3001,7 +2184,7 @@ private function uploadTtlData(string $ttlData, ?int $itemSetId = null): string 
         } catch (\Exception $e) {
                if ($itemSetId) {
    
-                    $excavationId = $this->getExcavationIdentifierFromItemSet($itemSetId);
+                    $excavationId = $this->excavationItemSetContextService->getExcavationIdentifierFromItemSet($itemSetId);
                     if ($excavationId) {
                         $excavationIdentifier = $excavationId;
     
@@ -3069,7 +2252,7 @@ private function uploadTtlData(string $ttlData, ?int $itemSetId = null): string 
    
                     
                     // Store the mapping between item set and excavation
-                    $this->storeMappingBetweenItemSetAndExcavation($itemSetId, $excavationIdentifier);
+                    $this->excavationItemSetContextService->storeMappingBetweenItemSetAndExcavation($itemSetId, $excavationIdentifier);
                 }
             } catch (\Exception $e) {
    
@@ -3121,7 +2304,7 @@ private function uploadTtlData(string $ttlData, ?int $itemSetId = null): string 
         
         if (strpos($graphDbResult, 'successfully') !== false) {
             // If GraphDB upload is successful, then process in Omeka S
-            $resolvedExcavationId = $itemSetId ? $this->getExcavationIdentifierFromItemSet($itemSetId) : null;
+            $resolvedExcavationId = $itemSetId ? $this->excavationItemSetContextService->getExcavationIdentifierFromItemSet($itemSetId) : null;
             $omekaData = $this->omekaIngestionService->transformTtlToOmekaItemPayloads(
                 $ttlData,
                 $itemSetId,
@@ -3251,25 +2434,6 @@ private function excavationIdentifierExists($excavationIdentifier) {
     }
 }
 
-/**
- * Stores the mapping between an item set and an excavation identifier.
- * This method updates the site settings to maintain the relationship.
- * @param int $itemSetId The ID of the item set
- * @param string $excavationId The excavation identifier
- */
-private function storeMappingBetweenItemSetAndExcavation($itemSetId, $excavationId)
-{
-    $mappings = $this->siteSettings()->get('excavation_itemset_mappings', []);
-    
-    $mappings[$itemSetId] = $excavationId;
-    
-    // Save the updated mappings
-    $this->siteSettings()->set('excavation_itemset_mappings', $mappings);
-    
-   
-}
-
-
 /** Extracts the excavation identifier from the TTL data.
  * This method looks for both dct:identifier and dcterms:identifier patterns.
  * @param string $ttlData The TTL data to search
@@ -3376,94 +2540,6 @@ private function sendToGraphDB($data, $excavationId)
 }
 
 
-
-/** * Retrieves the excavation identifier from the item set ID.
- * This method checks site settings for existing mappings and attempts to extract the identifier from the item set title if no mapping exists.
- * @param int $itemSetId The ID of the item set
- * @return string|null The excavation identifier or null if not found
- */
-private function getExcavationIdentifierFromItemSet($itemSetId)
-{
-    $mappings = $this->siteSettings()->get('excavation_itemset_mappings', []);
-    
-    if (isset($mappings[$itemSetId])) {
-        return $mappings[$itemSetId];
-    }
-    
-    // If no mapping found try to extract from item set title
-    try {
-        $itemSet = $this->api()->read('item_sets', $itemSetId)->getContent();
-        $title = $itemSet->displayTitle();
-        
-        if (preg_match('/Excavation\s+([^\s]+)/', $title, $matches)) {
-            $excavationId = $matches[1];
-            
-            $this->storeMappingBetweenItemSetAndExcavation($itemSetId, $excavationId);
-            
-            return $excavationId;
-        }
-    } catch (\Exception $e) {
-   
-    }
-    
-    return null;
-}
-
-
-
-
-/** Transforms Turtle data into Omeka S item data.
- * This method processes the Turtle data, extracts relevant information, and prepares it for Omeka S.
- * @param string $ttlData The Turtle data to transform
- * @param int|null $itemSetId The ID of the item set to associate with the items
- * @return array An array of Omeka S item data ready for upload
- */
-private function getLocationDataFromExcavation($itemSetId) {
-    try {
-        $graphUri = $this->baseDataGraphUri . $itemSetId . "/";
-        
-        $query = "
-        PREFIX excav: <https://purl.org/megalod/ms/excavation/>
-        PREFIX dbo: <http://dbpedia.org/ontology/>
-        PREFIX geo: <http://www.w3.org/2003/01/geo/wgs84_pos#>
-        PREFIX dul: <http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#>
-        
-        SELECT ?locationUri ?locationName ?district ?parish ?country ?lat ?long
-        WHERE {
-          GRAPH <$graphUri> {
-            ?excavation a excav:Excavation ;
-                        dul:hasLocation ?locationUri .
-            
-            OPTIONAL { ?locationUri dbo:informationName ?locationName }
-            OPTIONAL { ?locationUri dbo:district ?district }
-            OPTIONAL { ?locationUri dbo:parish ?parish }
-            OPTIONAL { ?locationUri dbo:Country ?country }
-            OPTIONAL { ?locationUri geo:lat ?lat }
-            OPTIONAL { ?locationUri geo:long ?long }
-          }
-        }
-        LIMIT 1";
-        
-        $results = $this->graphDbHttpService->selectSparqlBindings($query);
-        
-        if (!empty($results)) {
-            $result = $results[0];
-            return [
-                'uri' => $result['locationUri']['value'],
-                'name' => isset($result['locationName']) ? $result['locationName']['value'] : null,
-                'district' => isset($result['district']) ? $result['district']['value'] : null,
-                'parish' => isset($result['parish']) ? $result['parish']['value'] : null,
-                'country' => isset($result['country']) ? $result['country']['value'] : null,
-                'lat' => isset($result['lat']) ? $result['lat']['value'] : null,
-                'long' => isset($result['long']) ? $result['long']['value'] : null
-            ];
-        }
-    } catch (\Exception $e) {
-   
-    }
-    
-    return null;
-}
 
 /**
  * Extracts the identifier from the RDF data for a given subject.
@@ -4091,7 +3167,7 @@ private function createNewEncounterEvent($context, $itemSetId, $signature) {
  * @return string
  */
 private function addEncounterEventToTtl($ttlData, $encounterEvent, $itemSetId) {
-    $excavationIdentifier = $this->getExcavationIdentifierFromItemSet($itemSetId);
+    $excavationIdentifier = $this->excavationItemSetContextService->getExcavationIdentifierFromItemSet($itemSetId);
    
     $encounterUri = "{$this->localBaseUri}$itemSetId/excavation/$excavationIdentifier/encounter/encounter-{$encounterEvent['omeka_id']}";
     
@@ -4131,8 +3207,8 @@ private function addEncounterEventToTtl($ttlData, $encounterEvent, $itemSetId) {
     $encounterDefinition .= "    excav:foundInExcavation <$excavationUri> ;\n";
 
     // Add location reference
-    $locationUri = $this->getRealLocationUriFromExcavation($itemSetId);
-    if ($locationUri && $this->locationHasData($itemSetId)) {
+    $locationUri = $this->excavationItemSetContextService->getRealLocationUriFromExcavation($itemSetId);
+    if ($locationUri && $this->excavationItemSetContextService->locationHasData($itemSetId)) {
         $encounterDefinition .= "    excav:foundInLocation <$locationUri> ;\n";
     }
 
@@ -4185,23 +3261,6 @@ private function addEncounterEventToTtl($ttlData, $encounterEvent, $itemSetId) {
     return $enhancedTtl . $encounterDefinition;*/
 
     return $enhancedTtl . $encounterDefinition;
-}
-/**
- * Checks if the location has sufficient data to be considered valid.
- * This method checks if the location data contains any meaningful information.
- * @param int $itemSetId The ID of the item set to check
- * @return bool True if the location has sufficient data, false otherwise
- */
-private function locationHasData($itemSetId) {
-    $locationData = $this->getLocationDataFromExcavation($itemSetId);
-    return !empty($locationData) && (
-        !empty($locationData['name']) ||
-        !empty($locationData['district']) ||
-        !empty($locationData['parish']) ||
-        !empty($locationData['country']) ||
-        !empty($locationData['lat']) ||
-        !empty($locationData['long'])
-    );
 }
 /**
  * Checks for existing declarations in the TTL data.
@@ -4313,69 +3372,6 @@ private function extractItemIdentifierFromTtl($ttlData) {
     return 'unknown-item';
 }
 
-
-
-/**
- * This method extracts the idntifier from a URI.
- * @param mixed $uri
- * @return string
- */
-private function getRealLocationUriFromExcavation($itemSetId) {
-   
-    
-    if (!$itemSetId) {
-        return null;
-    }
-    
-    $excavationIdentifier = $this->getExcavationIdentifierFromItemSet($itemSetId);
-    if (!$excavationIdentifier) {
-        return null;
-    }
-
-    $locationData = $this->getLocationDataFromExcavation($itemSetId);
-    if (empty($locationData) || (
-        empty($locationData['name']) &&
-        empty($locationData['district']) &&
-        empty($locationData['parish']) &&
-        empty($locationData['country']) &&
-        empty($locationData['lat']) &&
-        empty($locationData['long'])
-    )) {
-   
-        return null;
-    }
-    
-    $graphUri = $this->baseDataGraphUri . $itemSetId . "/";
-    $locationQuery = "
-        PREFIX excav: <https://purl.org/megalod/ms/excavation/>
-        PREFIX dul: <http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#>
-        
-        SELECT ?locationUri
-        WHERE {
-            GRAPH <$graphUri> {
-                ?excavation a excav:Excavation ;
-                           dul:hasLocation ?locationUri .
-            }
-        }
-        LIMIT 1
-    ";
-    
-    try {
-        $results = $this->graphDbHttpService->selectSparqlBindings($locationQuery);
-        
-        if (!empty($results) && isset($results[0]['locationUri'])) {
-            $locationUri = $results[0]['locationUri']['value'];
-   
-            return $locationUri;
-        }
-    } catch (\Exception $e) {
-   
-    }
-    
-    $locationUri = "{$this->localBaseUri}$itemSetId/excavation/$excavationIdentifier/location/excavation-location";
-   
-    return $locationUri;
-}
 /**
  * Extracts a meaningful identifier from a resource URI structure.
  * This method handles various URI patterns to extract identifiers for contexts, SVUs, and squares.
