@@ -321,7 +321,7 @@ final class SiteResourceSearchService
                 ];
             }
 
-            if (!empty($propertyFilters)) {
+            if ($propertyFilters !== []) {
                 $itemQuery['property'] = $propertyFilters;
             }
 
