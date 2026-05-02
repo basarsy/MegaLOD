@@ -64,3 +64,4 @@ build/
 .sass-cache
 .php_cs.cache
 .php-cs-fixer.cache
+software/omeka-s/modules/AddTriplestore/.phpunit.result.cache

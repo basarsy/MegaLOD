@@ -2,6 +2,10 @@
 return [
     'service_manager' => [
         'factories' => [
+            \AddTriplestore\Service\Site\ArrowheadItemClassifier::class => \Laminas\ServiceManager\Factory\InvokableFactory::class,
+            \AddTriplestore\Service\Site\UserContributedResourcesService::class => \AddTriplestore\Service\Site\UserContributedResourcesServiceFactory::class,
+            \AddTriplestore\Service\Site\ResourceDetailPresentationService::class => \AddTriplestore\Service\Site\ResourceDetailPresentationServiceFactory::class,
+            \AddTriplestore\Service\Site\SiteResourceSearchService::class => \AddTriplestore\Service\Site\SiteResourceSearchServiceFactory::class,
             \AddTriplestore\Service\MegalodConfig::class => \AddTriplestore\Service\MegalodConfigFactory::class,
             \AddTriplestore\Service\GraphDbCredentialService::class => \AddTriplestore\Service\GraphDbCredentialServiceFactory::class,
             \AddTriplestore\Service\OmekaApiCredentialService::class => \AddTriplestore\Service\OmekaApiCredentialServiceFactory::class,

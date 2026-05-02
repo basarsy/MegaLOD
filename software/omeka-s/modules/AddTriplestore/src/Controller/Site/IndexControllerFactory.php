@@ -22,8 +22,11 @@ use AddTriplestore\Service\Ttl\TtlPresentationService;
 use AddTriplestore\Service\Ttl\TtlUriHelper;
 use AddTriplestore\Service\Ttl\TtlUriNormalizer;
 use AddTriplestore\Service\Ttl\UploadedFileToTtlConverter;
-use AddTriplestore\Service\Ttl\VocabularyLabelService;
 use AddTriplestore\Service\Ttl\XmlToTtlPipeline;
+use AddTriplestore\Service\Site\ArrowheadItemClassifier;
+use AddTriplestore\Service\Site\ResourceDetailPresentationService;
+use AddTriplestore\Service\Site\SiteResourceSearchService;
+use AddTriplestore\Service\Site\UserContributedResourcesService;
 use AddTriplestore\Service\Upload\TtlUploadOrchestrationService;
 use Interop\Container\ContainerInterface;
 use Laminas\ServiceManager\Factory\FactoryInterface;
@@ -52,13 +55,16 @@ class IndexControllerFactory implements FactoryInterface
         $uploadedFileToTtlConverter = $container->get(UploadedFileToTtlConverter::class);
         $encounterEventService = $container->get(EncounterEventService::class);
         $siteMetadataOptions = $container->get(SiteMetadataOptionsService::class);
-        $vocabularyLabelService = $container->get(VocabularyLabelService::class);
         $ttlPresentationService = $container->get(TtlPresentationService::class);
         $arrowheadCanonicalTtlExporter = $container->get(ArrowheadCanonicalTtlExporter::class);
         $collectingToExcavationMapper = $container->get(CollectingFormToExcavationDataMapper::class);
         $omekaSiteResource = $container->get(OmekaSiteResourceService::class);
         $siteUserAuthSupport = $container->get(SiteUserAuthSupport::class);
         $ttlUploadOrchestrationService = $container->get(TtlUploadOrchestrationService::class);
+        $arrowheadItemClassifier = $container->get(ArrowheadItemClassifier::class);
+        $userContributedResourcesService = $container->get(UserContributedResourcesService::class);
+        $resourceDetailPresentationService = $container->get(ResourceDetailPresentationService::class);
+        $siteResourceSearchService = $container->get(SiteResourceSearchService::class);
 
         return new IndexController(
             $router,
@@ -79,13 +85,16 @@ class IndexControllerFactory implements FactoryInterface
             $uploadedFileToTtlConverter,
             $encounterEventService,
             $siteMetadataOptions,
-            $vocabularyLabelService,
             $ttlPresentationService,
             $arrowheadCanonicalTtlExporter,
             $collectingToExcavationMapper,
             $omekaSiteResource,
             $siteUserAuthSupport,
-            $ttlUploadOrchestrationService
+            $ttlUploadOrchestrationService,
+            $arrowheadItemClassifier,
+            $userContributedResourcesService,
+            $resourceDetailPresentationService,
+            $siteResourceSearchService
         );
     }
 }
