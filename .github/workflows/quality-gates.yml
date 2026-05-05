@@ -1,3 +1,7 @@
+# Required GitHub checks for protected branches (Settings → Branches):
+# enable "RDF validation" + "Quality gates" workflow as required status checks,
+# or select the individual jobs you want to block merges (PHPStan, PHPUnit, etc.).
+
 name: Quality gates
 
 on:
@@ -62,8 +66,12 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   phpunit-addtriplestore:
-    name: PHPUnit + PHPStan (AddTriplestore)
+    name: PHPUnit + PHPStan (AddTriplestore, PHP ${{ matrix.php }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ["8.2", "8.3"]
     defaults:
       run:
         working-directory: software/omeka-s
@@ -72,8 +80,8 @@ jobs:
 
       - uses: shivammathur/setup-php@v2
         with:
-          php-version: "8.2"
-          tools: composer:v2
+          php-version: ${{ matrix.php }}
+          tools: composer:v2, phpstan:2.1.32
           coverage: none
 
       - name: Composer install (dev for PHPUnit)
@@ -85,10 +93,5 @@ jobs:
       - name: PHPUnit module tests
         run: ./vendor/bin/phpunit -c modules/AddTriplestore/phpunit.xml
 
-      - name: Download PHPStan
-        run: |
-          set -euo pipefail
-          curl -sSL "https://github.com/phpstan/phpstan/releases/download/2.1.32/phpstan.phar" -o /tmp/phpstan.phar
-
-      - name: PHPStan AddTriplestore Service layer
-        run: php /tmp/phpstan.phar analyse --memory-limit=512M -c modules/AddTriplestore/phpstan.neon.dist
+      - name: PHPStan AddTriplestore (Service + Controller)
+        run: phpstan analyse --memory-limit=512M -c modules/AddTriplestore/phpstan.neon.dist

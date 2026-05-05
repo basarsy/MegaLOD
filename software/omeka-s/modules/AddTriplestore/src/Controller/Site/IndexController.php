@@ -2,8 +2,6 @@
 
 namespace AddTriplestore\Controller\Site;
 
-require 'vendor/autoload.php';
-
 use AddTriplestore\Service\Encounter\EncounterEventService;
 use AddTriplestore\Service\ExcavationItemSetContextService;
 use AddTriplestore\Service\GraphDbHttpService;
@@ -41,6 +39,14 @@ use Laminas\Router\RouteStackInterface;
 use Laminas\Session\Container;
 use Laminas\Validator\Csrf as CsrfValidator;
 
+/**
+ * Omeka wires controller plugins at runtime; declare them for static analysis.
+ *
+ * @method \Omeka\Api\Representation\SiteRepresentation currentSite()
+ * @method \Omeka\Entity\User|null identity()
+ * @method \Omeka\Mvc\Controller\Plugin\Messenger messenger()
+ * @method \Omeka\Api\Manager api()
+ */
 class IndexController extends AbstractActionController
 {
     private $graphdbEndpoint;
@@ -1035,8 +1041,9 @@ class IndexController extends AbstractActionController
      */
     public function preDispatch(\Laminas\Mvc\MvcEvent $e)
     {
-        // Call parent preDispatch if it exists
-        if (method_exists(get_parent_class(), 'preDispatch')) {
+        // Call parent preDispatch when the Laminas/Omeka base provides it.
+        if (method_exists(get_parent_class($this), 'preDispatch')) {
+            // @phpstan-ignore staticMethod.notFound (not all AbstractActionController generations declare preDispatch)
             parent::preDispatch($e);
         }
         
