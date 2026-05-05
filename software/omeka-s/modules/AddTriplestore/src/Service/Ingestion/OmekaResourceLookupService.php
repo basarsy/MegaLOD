@@ -183,12 +183,13 @@ class OmekaResourceLookupService
         }
 
         if (preg_match('/^\d+$/', $identifier)) {
+            $numericId = (int) $identifier;
             $variations[] = 'CV-' . str_pad($identifier, 3, '0', STR_PAD_LEFT);
             $variations[] = 'CV-001-' . $identifier;
 
-            if ($identifier <= 26) {
-                $letter = chr(64 + ($identifier % 26 + 1));
-                $number = ceil($identifier / 26);
+            if ($numericId <= 26) {
+                $letter = chr(64 + ($numericId % 26 + 1));
+                $number = (int) ceil($numericId / 26);
                 $variations[] = $letter . $number;
             }
         }

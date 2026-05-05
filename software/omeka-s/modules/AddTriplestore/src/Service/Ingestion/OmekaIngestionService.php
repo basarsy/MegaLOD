@@ -231,14 +231,10 @@ class OmekaIngestionService
     }
 
     /**
-     * This method extracts encounter event data for an arrowhead item.
-     * It looks for encounter events related to the arrowhead and processes them.
-     * @param mixed $rdfData The RDF data array
-     * @param mixed $subject The subject URI to extract encounter event data from
-     * @param array &$itemData The item data array to populate with encounter properties
-     * @param int|null $currentItemSetId The ID of the current item set, if available
+     * @param array<string, mixed> $rdfData
+     * @param string $archaeologistUri
+     * @return array<string, string|null>|null
      */
-
     private function extractArchaeologistData($rdfData, $archaeologistUri) {
         $data = [
             'name' => null,
@@ -471,14 +467,10 @@ class OmekaIngestionService
     }
 
     /**
-     * Extracts complete chipping data from the RDF data for a given subject.
-     * This method looks for chipping-related properties and processes them.
-     * @param mixed $rdfData The RDF data array
-     * @param mixed $subject The subject URI to extract chipping data from
-     * @param array &$itemData The item data array to populate with chipping properties
-     * @param int|null $currentItemSetId The ID of the current item set, if available
+     * @param array<string, mixed> $rdfData
+     * @param string $contextUri
+     * @return string|null
      */
-
     private function extractContextDescription($rdfData, $contextUri) {
         if (isset($rdfData[$contextUri]['http://purl.org/dc/terms/description'])) {
             foreach ($rdfData[$contextUri]['http://purl.org/dc/terms/description'] as $descObj) {
@@ -492,11 +484,10 @@ class OmekaIngestionService
 
 
     /**
-     * Extract the square coordinates from the RDF data.
-     * @param mixed $rdfData
-     * @param mixed $squareUri
+     * @param array<string, mixed> $rdfData
+     * @param string $contextUri
+     * @return string|null
      */
-
     private function extractContextDisplayValue($rdfData, $contextUri) {
        
         
@@ -612,13 +603,13 @@ class OmekaIngestionService
 
 
     /**
-     * Processes coordinate data for an arrowhead item.
-     * This method extracts coordinates from the RDF data and formats them for display.
-     * @param mixed $rdfData The RDF data array
-     * @param mixed $coordinateUri The URI of the coordinate resource
-     * @param array &$itemData The item data array to populate with coordinate properties
+     * Coordinate enrichment for a subject (delegates to extractCoordinateData).
+     *
+     * @param array<string, mixed> $rdfData
+     * @param string $subject
+     * @param array<string, mixed> $itemData
+     * @param int|null $currentItemSetId
      */
-
     private function extractCoordinateDataEnhanced($rdfData, $subject, &$itemData, $currentItemSetId) {
        
         
@@ -629,13 +620,11 @@ class OmekaIngestionService
 
 
     /**
-     * Extracts media resources from the RDF data for a given subject.
-     * This method looks for web resources and populates the item data with them.
-     * @param mixed $rdfData The RDF data array
-     * @param mixed $subject The subject URI to extract media resources from
-     * @param array &$itemData The item data array to populate with media resources
+     * @param array<string, mixed> $rdfData
+     * @param string $subject
+     * @param array<string, mixed> $itemData
+     * @param int|null $currentItemSetId
      */
-
     private function extractDirectArrowheadProperties($rdfData, $subject, &$itemData, $currentItemSetId) {
        
         
@@ -705,13 +694,11 @@ class OmekaIngestionService
 
 
     /**
-     * Processes morphology data for an arrowhead item.
-     * This method extracts properties related to the morphology of the arrowhead.
-     * @param mixed $rdfData The RDF data array
-     * @param mixed $morphologyUri The URI of the morphology resource
-     * @param array &$itemData The item data array to populate with morphology properties
+     * @param array<string, mixed> $rdfData
+     * @param string $subject
+     * @param array<string, mixed> $itemData
+     * @param int|null $currentItemSetId
      */
-
     private function extractEncounterEventData($rdfData, $subject, &$itemData, $currentItemSetId) {
        
         
@@ -777,14 +764,13 @@ class OmekaIngestionService
 
 
     /**
-     * Extracts the display value for a context resource.
-     * This method tries multiple strategies to find a meaningful display value for the context.
-     * @param mixed $rdfData The RDF data array
-     * @param mixed $contextUri The URI of the context resource
-     * @return string|null The display value or null if not found
+     * @param array<string, mixed> $rdfData
+     * @param string $subject
+     * @param array<string, mixed> $itemData
+     * @param int|null $currentItemSetId
+     * @return void
      */
-
-    private function extractGPSCoordinates($rdfData, $subject, &$itemData, $currentItemSetId) {
+    private function extractGPSCoordinates($rdfData, $subject, &$itemData, $currentItemSetId): void {
         $gpsPropertyUris = [
             'https://purl.org/megalod/ms/excavation/hasGPSCoordinates',
             'excav:hasGPSCoordinates'
@@ -830,14 +816,10 @@ class OmekaIngestionService
 
 
     /**
-     * Extracts direct arrowhead properties from the RDF data.
-     * This method retrieves properties like shape, variant, material, elongation index, and thickness index.
-     * @param mixed $rdfData The RDF data array
-     * @param mixed $subject The subject URI of the arrowhead
-     * @param array &$itemData The item data array to populate with extracted properties
-     * @param int|null $currentItemSetId The ID of the current item set, if available
+     * @param array<string, mixed> $rdfData
+     * @param string $subject
+     * @return string|null
      */
-
     private function extractIdentifier($rdfData, $subject) {
         if (isset($rdfData[$subject]['http://purl.org/dc/terms/identifier'])) {
             foreach ($rdfData[$subject]['http://purl.org/dc/terms/identifier'] as $idObj) {
@@ -852,13 +834,9 @@ class OmekaIngestionService
 
 
     /**
-     * Processes the RDF data for an arrowhead item.
-     * This method extracts various properties and measurements related to the arrowhead.
-     * @param mixed $rdfData The RDF data array
-     * @param mixed $subject The subject URI of the arrowhead
-     * @param array &$itemData The item data array to populate with extracted information
+     * @param string $uri
+     * @return string
      */
-
     private function extractIdentifierFromUri($uri) {
         $parts = explode('/', $uri);
         return end($parts);
@@ -866,13 +844,9 @@ class OmekaIngestionService
 
 
     /**
-     * Extracts SVU data from RDF data.
-     * This method retrieves the name and description of the SVU from the RDF data.
-     * @param array $rdfData The RDF data containing SVU information
-     * @param string $svuUri The URI of the SVU to extract data from
-     * @return array|null An associative array with 'name' and 'description', or null if not found
+     * @param string $resourceUri
+     * @return string|null
      */
-
     private function extractIdentifierFromUriStructure($resourceUri) {
        
         
@@ -944,10 +918,10 @@ class OmekaIngestionService
 
 
     /**
-     * this method retrieves the real identifier from an Omeka item.
-     * @param mixed $itemId
+     * @param array<string, mixed> $rdfData
+     * @param string $typometryUri
+     * @return string|null
      */
-
     private function extractMeasurementUnit($rdfData, $typometryUri) {
        
         
@@ -1016,13 +990,10 @@ class OmekaIngestionService
 
 
     /**
-     * Extracts a meaningful identifier from RDF data for a given resource URI.
-     * This method attempts to find an identifier in the RDF data, falling back to URI structure if necessary.
-     * @param array $rdfData The RDF data containing resource information
-     * @param string $resourceUri The URI of the resource to extract the identifier from
-     * @return string|null The extracted identifier or null if not found
+     * @param array<string, mixed> $rdfData
+     * @param string $typometryUri
+     * @return string|null
      */
-
     private function extractMeasurementValue($rdfData, $typometryUri) {
        
         
@@ -1065,14 +1036,12 @@ class OmekaIngestionService
 
 
     /**
-     * Extracts the measurement unit from RDF data.
-     * This method retrieves the unit of a typometry measurement from the RDF data.
-     * @param array $rdfData The RDF data containing typometry information
-     * @param string $typometryUri The URI of the typometry measurement to extract
-     * @return string|null The extracted measurement unit or null if not found
+     * @param array<string, mixed> $rdfData
+     * @param string $subject
+     * @param array<string, mixed> $itemData
+     * @return void
      */
-
-    private function extractMediaResources($rdfData, $subject, &$itemData) {
+    private function extractMediaResources($rdfData, $subject, &$itemData): void {
        
         
         $mediaUris = [
@@ -1105,11 +1074,10 @@ class OmekaIngestionService
 
 
     /**
-     * Retrieves the current item set context.
-     * This method should return the ID of the current item set being processed.
-     * @return int|null The current item set ID or null if not set
+     * @param array<string, mixed> $valueObj
+     * @param string $type
+     * @return mixed
      */
-
     private function extractPropertyValue($valueObj, $type = 'auto') {
         if ($valueObj['type'] === 'literal') {
             $value = $valueObj['value'];
@@ -1171,14 +1139,10 @@ class OmekaIngestionService
     }
 
     /**
-     * Extracts all measurements from the RDF data for a given subject.
-     * This method looks for specific measurement properties and retrieves their values and units.
-     * @param mixed $rdfData The RDF data array
-     * @param mixed $subject The subject URI to extract measurements from
-     * @param array &$itemData The item data array to populate with measurement properties
-     * @param int|null $currentItemSetId The ID of the current item set, if available
+     * @param array<string, mixed> $rdfData
+     * @param string $resourceUri
+     * @return string
      */
-
     private function extractResourceDisplayName($rdfData, $resourceUri) {
         if (isset($rdfData[$resourceUri]['http://purl.org/dc/terms/identifier'])) {
             foreach ($rdfData[$resourceUri]['http://purl.org/dc/terms/identifier'] as $idObj) {
@@ -1246,13 +1210,10 @@ class OmekaIngestionService
         return null;
     }
     /**
-     * Retrieves the  location URI from an excavation item set.
-     * This method checks if the excavation has a valid location and returns its URI.
-     * If no valid location is found, it constructs a fallback URI based on the excavation identifier.
-     * @param int $itemSetId The ID of the item set to check
-     * @return string|null The real location URI or null if not found
+     * @param array<string, mixed> $rdfData
+     * @param string $squareUri
+     * @return string|null
      */
-
     private function extractSquareCoordinates($rdfData, $squareUri) {
         $coords = [];
         
@@ -1312,13 +1273,10 @@ class OmekaIngestionService
 
 
     /**
-     * Extracts the measurement value from RDF data.
-     * This method retrieves the value of a typometry measurement from the RDF data.
-     * @param array $rdfData The RDF data containing typometry information
-     * @param string $typometryUri The URI of the typometry measurement to extract
-     * @return string|null The extracted measurement value or null if not found
+     * @param array<string, mixed> $rdfData
+     * @param string $timelineUri
+     * @return string|null
      */
-
     private function extractTimelineRange($rdfData, $timelineUri) {
         if (!isset($rdfData[$timelineUri])) {
             return null;
@@ -1425,13 +1383,8 @@ class OmekaIngestionService
 
 
     /**
-     * This method extracts common properties from RDF data and populates item data.
-     * @param mixed $rdfData
-     * @param mixed $subject
-     * @param mixed $itemData
-     * @return void
+     * Retrieves the current item set context ID for this transformation.
      */
-
     private function getCurrentItemSetContext(): ?int
     {
         return $this->contextItemSetId;
@@ -1623,12 +1576,10 @@ class OmekaIngestionService
 
 
     /**
-     * Retrieves location data from the excavation item set.
-     * This method queries the GraphDB for location information associated with the excavation.
-     * @param int $itemSetId The ID of the item set
-     * @return array|null An associative array with location details or null if not found
+     * @param array<string, mixed> $rdfData
+     * @param string $subject
+     * @return bool
      */
-
     private function isMainArrowheadItem($rdfData, $subject) {
         if (!isset($rdfData[$subject])) {
             return false;
@@ -1727,14 +1678,10 @@ class OmekaIngestionService
 
 
     /**
-     * Extracts GPS coordinates from the RDF data for a given subject.
-     * This method looks for the 'hasGPSCoordinates' property and retrieves latitude and longitude values.
-     * @param mixed $rdfData The RDF data array
-     * @param mixed $subject The subject URI to extract GPS coordinates from
-     * @param array &$itemData The item data array to populate with GPS coordinates
-     * @param int|null $currentItemSetId The ID of the current item set, if available
+     * @param array<string, mixed> $rdfData
+     * @param string $chippingUri
+     * @param array<string, mixed> $itemData
      */
-
     private function processChippingResource($rdfData, $chippingUri, &$itemData) {
        
         
@@ -1850,13 +1797,10 @@ class OmekaIngestionService
     }
 
     /**
-     * Extracts the value from a property value object.
-     * This method handles both literal and URI types, converting boolean values to specific strings if needed.
-     * @param array $valueObj The property value object
-     * @param string $type The type of the property (default is 'auto')
-     * @return mixed The extracted value or null if not applicable
+     * @param array<string, mixed> $rdfData
+     * @param string $subject
+     * @param array<string, mixed> $itemData
      */
-
     private function processContextData($rdfData, $subject, &$itemData) {
        
        
@@ -1990,15 +1934,11 @@ class OmekaIngestionService
     }
 
     /**
-     * this method extracts the timeline range from RDF data.
-     * It retrieves the beginning and end years, along with BC/AD information,
-     * and formats it into a human-readable string.
-     * @param mixed $rdfData
-     * @param mixed $timelineUri
-     * @return string|null
+     * @param array<string, mixed> $rdfData
+     * @param string $coordinateUri
+     * @param array<string, mixed> $itemData
      */
-
-    private function processCoordinateResource($rdfData, $coordinateUri, &$itemData) {
+    private function processCoordinateResource($rdfData, $coordinateUri, &$itemData): void {
        
         
         $coordinates = [
@@ -2339,11 +2279,10 @@ class OmekaIngestionService
     }
 
     /**
-     * This method extracts the display name for a resource from the RDF data.
-     * @param mixed $rdfData
-     * @param mixed $resourceUri
+     * @param array<string, mixed> $rdfData
+     * @param string $subject
+     * @param array<string, mixed> $itemData
      */
-
     private function processExcavationData($rdfData, $subject, &$itemData) {
        
        
@@ -2797,11 +2736,10 @@ class OmekaIngestionService
 
 
     /**
-     * This method extracts the description of a context from RDF data.
-     * @param mixed $rdfData
-     * @param mixed $contextUri
+     * @param array<string, mixed> $rdfData
+     * @param string $morphologyUri
+     * @param array<string, mixed> $itemData
      */
-
     private function processMorphologyResource($rdfData, $morphologyUri, &$itemData) {
        
         
@@ -2867,13 +2805,10 @@ class OmekaIngestionService
     }
 
     /**
-     * Processes chipping data for an arrowhead item.
-     * This method extracts properties related to the chipping characteristics of the arrowhead.
-     * @param mixed $rdfData The RDF data array
-     * @param mixed $chippingUri The URI of the chipping resource
-     * @param array &$itemData The item data array to populate with chipping properties
+     * @param array<string, mixed> $rdfData
+     * @param string $subject
+     * @param array<string, mixed> $itemData
      */
-
     private function processSVUData($rdfData, $subject, &$itemData) {
        
        

@@ -30,6 +30,8 @@ use AddTriplestore\Service\Ttl\TtlUriNormalizer;
 use AddTriplestore\Service\Ttl\UploadedFileToTtlConverter;
 use AddTriplestore\Service\Ttl\XmlToTtlPipeline;
 use AddTriplestore\Service\Upload\TtlUploadOrchestrationService;
+use Laminas\Http\Request as HttpRequest;
+use Laminas\Http\Response as HttpResponse;
 use Laminas\Mvc\Controller\AbstractActionController;
 use Laminas\View\Model\ViewModel;
 use Laminas\Http\Client;
@@ -207,7 +209,23 @@ class IndexController extends AbstractActionController
         $this->graphdbWorkbenchUrl = $megalodConfig->getGraphdbWorkbenchUrl();
     }
 
+    private function httpRequest(): HttpRequest
+    {
+        $request = parent::getRequest();
+        if (!$request instanceof HttpRequest) {
+            throw new \RuntimeException('Expected HTTP request');
+        }
+        return $request;
+    }
 
+    private function httpResponse(): HttpResponse
+    {
+        $response = parent::getResponse();
+        if (!$response instanceof HttpResponse) {
+            throw new \RuntimeException('Expected HTTP response');
+        }
+        return $response;
+    }
 
     // ================== ACTION METHODS ==================
 
@@ -244,7 +262,7 @@ class IndexController extends AbstractActionController
      */
     public function logoutAction()
     {
-        if (!$this->getRequest()->isPost()) {
+        if (!$this->httpRequest()->isPost()) {
             return $this->redirect()->toRoute('site', ['site-slug' => $this->currentSite()->slug()]);
         }
 
@@ -289,7 +307,7 @@ class IndexController extends AbstractActionController
         ]);
         $view->setTemplate('add-triplestore/site/index/signup');
 
-        if ($this->getRequest()->isPost()) {
+        if ($this->httpRequest()->isPost()) {
             if (!$this->validateCsrfToken()) {
                 return $view;
             }
@@ -364,7 +382,7 @@ class IndexController extends AbstractActionController
         ]);
         $view->setTemplate('add-triplestore/site/index/login');
         
-        if ($this->getRequest()->isPost()) {
+        if ($this->httpRequest()->isPost()) {
             $data = $this->params()->fromPost();
             $form->setData($data);
            
@@ -479,7 +497,7 @@ class IndexController extends AbstractActionController
      *
      * Shows items and item sets owned by the current user.
      *
-     * @return \Laminas\View\Model\ViewModel|Response
+     * @return \Laminas\View\Model\ViewModel|\Laminas\Http\Response
      */
     public function myDataAction()
     {
@@ -532,7 +550,7 @@ class IndexController extends AbstractActionController
      */
     public function viewDetailsAction()
     {
-        $request = $this->getRequest();
+        $request = $this->httpRequest();
         $requestedResourceType = $request->getQuery('type', 'item');
         $requestedId = (int) $request->getQuery('id');
 
@@ -573,7 +591,7 @@ class IndexController extends AbstractActionController
         if ($redirect)
             return $redirect;
 
-        if ($this->getRequest()->isPost() && !$this->validateCsrfToken()) {
+        if ($this->httpRequest()->isPost() && !$this->validateCsrfToken()) {
             return $this->redirect()->toRoute('site/add-triplestore/upload', [
                 'site-slug' => $this->currentSite()->slug(),
             ]);
@@ -644,7 +662,7 @@ class IndexController extends AbstractActionController
 
         $user = $this->identity();
 
-        if ($this->getRequest()->isPost() && !$this->validateCsrfToken()) {
+        if ($this->httpRequest()->isPost() && !$this->validateCsrfToken()) {
             return $this->redirect()->toRoute('site/add-triplestore/upload', [
                 'site-slug' => $this->currentSite()->slug(),
             ]);
@@ -653,8 +671,8 @@ class IndexController extends AbstractActionController
         $postData = $this->params()->fromPost();
 
         $uploadCtx = UploadRequestContext::fromRequestParameters(
-            $this->getRequest()->getQuery(),
-            $this->getRequest()->getPost()
+            $this->httpRequest()->getQuery(),
+            $this->httpRequest()->getPost()
         );
         $uploadType = $uploadCtx->uploadType;
         $itemSetId = $uploadCtx->itemSetId;
@@ -667,7 +685,7 @@ class IndexController extends AbstractActionController
             $file = $this->params()->fromFiles('file');
             if ($file && !empty($file['tmp_name'])) {
 
-                $result = $this->processFileUpload($this->getRequest(), $uploadType, $itemSetIdInt);
+                $result = $this->processFileUpload($this->httpRequest(), $uploadType, $itemSetIdInt);
 
                 $excavationId = $this->excavationItemSetContextService->getExcavationIdentifierFromItemSet($itemSetId);
 
@@ -805,7 +823,7 @@ class IndexController extends AbstractActionController
         // direct file uploads
         else if (isset($_FILES['file']) && !empty($_FILES['file']['tmp_name'])) {
             
-            $result = $this->processFileUpload($this->getRequest(), $uploadType, $itemSetIdInt);
+            $result = $this->processFileUpload($this->httpRequest(), $uploadType, $itemSetIdInt);
             // If error, redirect back to upload page with error message
             if (strpos($result, 'Error') !== false || strpos($result, 'Validation Error') !== false || strpos($result, 'Failed') !== false) {
                 $url = $this->url()->fromRoute('site/add-triplestore/upload', [
@@ -924,7 +942,7 @@ class IndexController extends AbstractActionController
         // Set content type
         $contentType = $format === 'xml' ? 'application/xml' : 'text/turtle';
 
-        $response = $this->getResponse();
+        $response = $this->httpResponse();
         $response->getHeaders()->addHeaderLine('Content-Type', $contentType);
         $response->getHeaders()->addHeaderLine('Content-Disposition', 'attachment; filename="' . $filename . '"');
         $response->setContent(file_get_contents($filePath));
@@ -975,7 +993,7 @@ class IndexController extends AbstractActionController
 
             $filename = $this->ttlUriHelper->sanitizeFilename($resource->displayTitle());
             
-            $response = $this->getResponse();
+            $response = $this->httpResponse();
             $response->getHeaders()->addHeaderLine('Content-Type', 'text/turtle; charset=UTF-8');
             $response->getHeaders()->addHeaderLine('Content-Disposition', 'attachment; filename="' . $filename . '.ttl"');
             $response->setContent($ttlData);
@@ -1004,7 +1022,7 @@ class IndexController extends AbstractActionController
      */
     public function searchAction()
     {
-        $searchQueryDto = SiteSearchQuery::fromParameters($this->getRequest()->getQuery());
+        $searchQueryDto = SiteSearchQuery::fromParameters($this->httpRequest()->getQuery());
 
         $archaeologistOptions = $this->siteMetadataOptionsService->getArchaeologistOptions();
         $countryOptions = $this->siteMetadataOptionsService->getCountryOptions();
@@ -1060,6 +1078,9 @@ class IndexController extends AbstractActionController
     private function preventAdminAccess(\Laminas\Mvc\MvcEvent $e)
     {
         $request = $e->getRequest();
+        if (!$request instanceof HttpRequest) {
+            return;
+        }
         $uri = $request->getUri();
         $path = $uri->getPath();
         
@@ -1083,9 +1104,13 @@ class IndexController extends AbstractActionController
                 
                 // Redirect to allowed site
                 $session = new Container('site_user');
-                $siteSlug = $session->allowedSite ?: $this->currentSite()->slug();
+                $allowedSite = $session->offsetExists('allowedSite') ? $session->offsetGet('allowedSite') : null;
+                $siteSlug = (!empty($allowedSite) && is_string($allowedSite)) ? $allowedSite : $this->currentSite()->slug();
                 
                 $response = $e->getResponse();
+                if (!$response instanceof HttpResponse) {
+                    return;
+                }
                 $response->getHeaders()->addHeaderLine('Location', $this->url()->fromRoute('site', ['site-slug' => $siteSlug]));
                 $response->setStatusCode(302);
                 return $response;
@@ -1322,9 +1347,9 @@ private function uploadTtlDataWithMedia($ttlData, $itemSetId, $uploadedFiles) {
 
 /**
  * This function processes the upload of a file
- * @param mixed $request
- * @param mixed $uploadType
- * @param mixed $itemSetId
+ * @param \Laminas\Http\Request $request
+ * @param string|null $uploadType
+ * @param int|null $itemSetId
  * @throws \Exception
  * @return string
  */
