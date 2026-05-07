@@ -110,9 +110,6 @@ final class TtlUploadOrchestrationService
                     }
                 );
             } elseif ($isExcavation && $excavationIdentifier) {
-                if ($this->omekaResourceLookupService->itemExistsWithDctermsIdentifier($excavationIdentifier)) {
-                }
-
                 $excavationMetadata = $this->ttlContentInspectionService->extractExcavationMetadataFromTtl($ttlData);
 
                 try {
@@ -144,8 +141,6 @@ final class TtlUploadOrchestrationService
                 return (string) $encounterResult['error'];
             }
             $ttlData = $encounterResult['ttl'];
-
-            error_log('ttldata: ' . $ttlData, 3, OMEKA_PATH . '/logs/normalizeeeee_uris.log');
 
             $graphUriSuffix = ($itemSetId !== null && $itemSetId !== '') ? (string) $itemSetId : '0';
             $graphUri = $this->megalodConfig->getMegalodPublicBaseUri() . $graphUriSuffix . '/';

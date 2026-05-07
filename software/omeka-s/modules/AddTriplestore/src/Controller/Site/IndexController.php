@@ -604,10 +604,7 @@ class IndexController extends AbstractActionController
         // Get data from the collecting form
         $formData = $this->params()->fromPost();
                 
-        $uploadedFiles = null;
-        if (isset($_FILES['file']['54'])) {
-            $uploadedFiles = $_FILES['file']['54'];
-        }
+        $uploadedFiles = $this->extractCollectingFormUploadedFiles($_FILES);
         // transform the form data to Arrowhead data format
         $arrowheadData = $this->collectingFormToArrowheadMapper->map($formData);
 
@@ -1342,6 +1339,56 @@ private function uploadTtlDataWithMedia($ttlData, $itemSetId, $uploadedFiles) {
     return $this->uploadTtlData($ttlData, $itemSetId);
 }
 
+/**
+ * Extract files attached via the Collecting module into the multi-file
+ * shape expected by OmekaRestSubmissionService::attachUploadedMediaToItem.
+ *
+ * Collecting wraps file inputs as <input name="file[<promptId>][]">, so
+ * the raw $_FILES['file'] payload is keyed by prompt id.
+ *
+ * @param array<string, mixed> $files
+ * @return array<string, array<int, mixed>>|null
+ */
+private function extractCollectingFormUploadedFiles(array $files): ?array
+{
+    if (empty($files['file']) || !is_array($files['file'])) {
+        return null;
+    }
+
+    $names = $files['file']['name'] ?? null;
+    if (!is_array($names)) {
+        return null;
+    }
+
+    foreach ($names as $promptId => $promptNames) {
+        if (!is_array($promptNames) || empty($promptNames)) {
+            continue;
+        }
+
+        $hasUpload = false;
+        foreach ($promptNames as $name) {
+            if (is_string($name) && $name !== '') {
+                $hasUpload = true;
+                break;
+            }
+        }
+
+        if (!$hasUpload) {
+            continue;
+        }
+
+        return [
+            'name' => $files['file']['name'][$promptId] ?? [],
+            'type' => $files['file']['type'][$promptId] ?? [],
+            'tmp_name' => $files['file']['tmp_name'][$promptId] ?? [],
+            'error' => $files['file']['error'][$promptId] ?? [],
+            'size' => $files['file']['size'][$promptId] ?? [],
+        ];
+    }
+
+    return null;
+}
+
 
 
 
@@ -1381,6 +1428,7 @@ private function processFileUpload($request, ?string $uploadType, ?int $itemSetI
             try {
                 $this->ttlContentInspectionService->validateUploadType($ttlData, $uploadType);
             } catch (\Exception $e) {
+                return 'Validation Error: ' . $e->getMessage();
             }
         }
 

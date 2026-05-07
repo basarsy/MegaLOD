@@ -13,8 +13,6 @@ use Omeka\Permissions\Assertion\IsSelfAssertion;
 
 class Module extends AbstractModule
 {
-    private $processedDeletions = [];
-
     private function meg(): MegalodConfig
     {
         return $this->getServiceLocator()->get(MegalodConfig::class);
