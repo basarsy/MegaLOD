@@ -3,11 +3,16 @@
 This guide details the complete installation of the MegaLOD platform for managing and visualizing archaeological data.
 
 ### Base Software
-- **Apache** 2.4+ (with AllowOverride "All" and mod_rewrite enabled)
-- **MySQL** 5.7.9+
-- **PHP** 7.4+ (latest stable version preferred)
-- **Node.js** and **npm**
-- **ImageMagick** 6.7.5+ (for thumbnail generation)
+
+The supported runtime baseline is defined once, in the **Authoritative compatibility matrix** at the root [`README.md`](../../README.md#authoritative-compatibility-matrix). At a glance:
+
+- **PHP 8.2 or 8.3** (CI-enforced; PHP 7.x and 8.0/8.1 are no longer supported)
+- **Apache 2.4+** with `mod_rewrite` and `AllowOverride All`
+- **MySQL 5.7.9+** or **MariaDB 10.5+**
+- **GraphDB 10.x**
+- **Composer 2.8.x**, **Node.js 18+** (themes only), **ImageMagick 6.7.5+**
+
+Always cross-check the root matrix before installing — that table wins.
 
 ---
 

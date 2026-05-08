@@ -15,10 +15,12 @@ The **AddTriplestore** module allows you to upload, manage, and view archaeologi
 
 ## Requirements
 
-- Omeka S 4.0 or higher
-- PHP 8.0 or higher
-- GraphDB instance (for RDF storage and validation)
-- **Collecting module** (modified version included)
+The supported runtime baseline lives in the root project [compatibility matrix](../../../../README.md#authoritative-compatibility-matrix). For this module specifically you need:
+
+- **Omeka S 4.0+**
+- **PHP 8.2 or 8.3** (CI-enforced; older PHP versions, including 8.0 and 8.1, are not supported)
+- **GraphDB 10.x** for RDF storage and SHACL validation
+- **Collecting module** (modified version included in this repo)
 
 ## Installation
 
