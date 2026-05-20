@@ -37,6 +37,7 @@ $this->headTitle('Login - ' . $site->title());
         </div>
 
         <div class="form-actions">
+            <?php echo $this->formHidden($form->get('loginform_csrf')); ?>
             <button type="submit" class="btn-primary full-width">Login</button>
         </div>
 
