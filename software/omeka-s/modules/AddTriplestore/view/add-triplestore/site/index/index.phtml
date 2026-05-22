@@ -159,40 +159,68 @@ $isLoggedIn = isset($isLoggedIn) ? $isLoggedIn : false;
             </div>
 
             <div id="upload-options" style="display: none;" class="upload-options">
-                <h2>Choose Upload Method</h2>
-                <div class="method-buttons">
-                    <button type="button" class="method-btn" onclick="showUploadForm('upload')">Upload File</button>
-                    <button type="button" class="method-btn" onclick="showUploadForm('form')">Use Form</button>
+                <h2>How would you like to add data?</h2>
+                <div class="method-cards-container">
+                    <div class="method-card" onclick="showUploadForm('form')">
+                        <div class="card-icon">📝</div>
+                        <h3>Fill Online Form</h3>
+                        <p>Manually enter details using our structured archaeological forms.</p>
+                    </div>
+                    <div class="method-card" onclick="showUploadForm('upload')">
+                        <div class="card-icon">📁</div>
+                        <h3>Upload File</h3>
+                        <p>Upload structured data files directly in TTL or XML formats.</p>
+                    </div>
                 </div>
             </div>
 
             <div id="upload-form" style="display: none;" class="upload-form-section">
-                <h2>Upload Data</h2>
-                <form action="<?php echo $this->url('site/add-triplestore/upload', ['site-slug' => $site->slug()], true); ?>" method="post" enctype="multipart/form-data">
+                <h2>Upload Data File</h2>
+                <form action="<?php echo $this->url('site/add-triplestore/upload', ['site-slug' => $site->slug()], true); ?>" method="post" enctype="multipart/form-data" class="modern-upload-form">
                     <input type="hidden" name="csrf_token" value="<?php echo $this->escapeHtml($csrfToken); ?>">
-                    <div class="form-group">
-                        <label for="file">Select file to upload:</label>
-                        <input type="file" name="file" id="file" class="form-control">
+                    
+                    <div class="file-drop-area">
+                        <div class="form-group">
+                            <label for="file" class="file-label">Select file to upload (TTL or XML):</label>
+                            <input type="file" name="file" id="file" class="form-control file-input">
+                        </div>
                     </div>
+
                     <div>
                         <input type="hidden" name="upload_type" id="upload_type" value="">
                     </div>
-                    <div class="form-actions">
-                        <input type="submit" value="Upload" name="submit" class="btn-primary">
-                        <a href="<?php echo $this->url('site/add-triplestore/download-template', ['site-slug' => $site->slug()], ['query' => ['template' => 'arrowhead', 'format' => 'ttl']]); ?>" class="btn-secondary" style="margin-left:10px;">Download Arrowhead TTL</a>
-                        <a href="<?php echo $this->url('site/add-triplestore/download-template', ['site-slug' => $site->slug()], ['query' => ['template' => 'arrowhead', 'format' => 'xml']]); ?>" class="btn-secondary" style="margin-left:10px;">Download Arrowhead XML</a>
-                        <a href="<?php echo $this->url('site/add-triplestore/download-template', ['site-slug' => $site->slug()], ['query' => ['template' => 'excavation', 'format' => 'ttl']]); ?>" class="btn-secondary" style="margin-left:10px;">Download Excavation TTL</a>
-                        <a href="<?php echo $this->url('site/add-triplestore/download-template', ['site-slug' => $site->slug()], ['query' => ['template' => 'excavation', 'format' => 'xml']]); ?>" class="btn-secondary" style="margin-left:10px;">Download Excavation XML</a>
+                    
+                    <div class="form-actions form-actions-spaced">
+                        <input type="submit" value="Upload Data" name="submit" class="btn-primary">
+                    </div>
+                    
+                    <div class="template-downloads">
+                        <h4>Need a template?</h4>
+                        <div class="template-links">
+                            <a href="<?php echo $this->url('site/add-triplestore/download-template', ['site-slug' => $site->slug()], ['query' => ['template' => 'arrowhead', 'format' => 'ttl']]); ?>" class="btn-secondary btn-sm">Arrowhead TTL</a>
+                            <a href="<?php echo $this->url('site/add-triplestore/download-template', ['site-slug' => $site->slug()], ['query' => ['template' => 'arrowhead', 'format' => 'xml']]); ?>" class="btn-secondary btn-sm">Arrowhead XML</a>
+                            <a href="<?php echo $this->url('site/add-triplestore/download-template', ['site-slug' => $site->slug()], ['query' => ['template' => 'excavation', 'format' => 'ttl']]); ?>" class="btn-secondary btn-sm">Excavation TTL</a>
+                            <a href="<?php echo $this->url('site/add-triplestore/download-template', ['site-slug' => $site->slug()], ['query' => ['template' => 'excavation', 'format' => 'xml']]); ?>" class="btn-secondary btn-sm">Excavation XML</a>
+                        </div>
                     </div>
                 </form>
             </div>
 
             <div id="remote-form" style="display: none;" class="remote-form-section">
-                <h2 id="form-title">Use Collection Form</h2>
-                <p>Please proceed with the form:</p>
-                <div class="form-buttons">
-                    <button type="button" id="arrowhead-form-btn" class="form-btn" onclick="redirectToForm('arrowhead', <?php echo 1; ?>)">Arrowhead Form</button>
-                    <button type="button" id="excavation-form-btn" class="form-btn" onclick="redirectToForm('excavation', <?php echo 2; ?>)">Excavation Form</button>
+                <h2 id="form-title">Select Form Type</h2>
+                <p style="text-align: center; color: #666; margin-bottom: 2rem;">Please choose which type of archaeological data you want to record:</p>
+                
+                <div class="method-cards-container">
+                    <div class="method-card" id="excavation-form-btn" onclick="redirectToForm('excavation', <?php echo 3; ?>)">
+                        <div class="card-icon">⛏️</div>
+                        <h3>Excavation Data</h3>
+                        <p>Record site locations, contexts, stratigraphic units, and encounter events.</p>
+                    </div>
+                    <div class="method-card" id="arrowhead-form-btn" onclick="redirectToForm('arrowhead', <?php echo 4; ?>)">
+                        <div class="card-icon">🔺</div>
+                        <h3>Artifact Data</h3>
+                        <p>Record detailed morphological, typometrical, and chipping data for arrowheads.</p>
+                    </div>
                 </div>
             </div>
             
@@ -214,18 +242,21 @@ $isLoggedIn = isset($isLoggedIn) ? $isLoggedIn : false;
                     } else if (method === 'form') {
                         const selectedType = document.getElementById('upload-options').getAttribute('data-type');
                         if (selectedType === 'excavation') {
-                            redirectToForm('excavation', 2);
+                            redirectToForm('excavation', 3);
                         } else if (selectedType === 'arrowhead') {
-                            redirectToForm('arrowhead', 1);
+                            redirectToForm('arrowhead', 4);
                         }
                     }
                 }
 
                 function redirectToForm(formType, formId) {
+                    // We use ID 0 as a placeholder because our controller will 
+                    // now automatically find the correct form by its label 
+                    // ("Excavation Form" or "Arrowhead Form") if the ID doesn't match.
                     if (formType === 'arrowhead') {
-                        window.location.href = '<?php echo $this->url('site/collecting', ['form-id' => 1, 'action' => 'uploadArrowheadForm'], true); ?>';
+                        window.location.href = '<?php echo $this->url('collecting-direct', ['form-id' => 0, 'action' => 'uploadArrowheadForm'], true); ?>';
                     } else if (formType === 'excavation') {
-                        window.location.href = '<?php echo $this->url('site/collecting', ['form-id' => 2, 'action' => 'uploadExcavationForm'], true); ?>';
+                        window.location.href = '<?php echo $this->url('collecting-direct', ['form-id' => 0, 'action' => 'uploadExcavationForm'], true); ?>';
                     }
                 }
             </script>

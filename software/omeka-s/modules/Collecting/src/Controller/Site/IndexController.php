@@ -18,8 +18,6 @@ class IndexController extends AbstractActionController
 
     protected $mediaTypeManager;
 
-    private $api;
-
 
     public function __construct(Acl $acl, Manager $mediaTypeManager)
     {
@@ -34,8 +32,35 @@ class IndexController extends AbstractActionController
  */
 public function uploadArrowheadFormAction()
 {
-    $formId = 4; // id of the arrowhead form
-    $cForm = $this->api()->read('collecting_forms', $formId)->getContent();
+    $formId = $this->params()->fromRoute('form-id');
+    $cForm = null;
+    
+    // Try to find by ID first
+    if ($formId) {
+        try {
+            $response = $this->api()->read('collecting_forms', $formId);
+            if ($response) {
+                $cForm = $response->getContent();
+            }
+        } catch (\Exception $e) {
+            // ID not found, continue to label search
+        }
+    }
+    
+    // If not found, try to find by label
+    if (!$cForm) {
+        $response = $this->api()->search('collecting_forms', ['label' => 'Arrowhead Form'])->getContent();
+        if (!empty($response)) {
+            $cForm = $response[0];
+        }
+    }
+    
+    // If still not found, we have a problem
+    if (!$cForm) {
+        $this->messenger()->addError('Arrowhead Form not found. Please create a form named "Arrowhead Form" in the admin dashboard.');
+        return $this->redirect()->toRoute('site', ['site-slug' => 'megalod']);
+    }
+
     $form = $cForm->getForm();
     
     $itemSetId = $this->params()->fromQuery('item_set_id');
@@ -116,6 +141,7 @@ public function uploadArrowheadFormAction()
         'contexts' => $contexts,
         'svus' => $svus
     ]);
+    $view->setTemplate('collecting/site/index/upload-arrowhead-form');
     
     return $view;
 }
@@ -187,8 +213,35 @@ private function getPropertyValue($values, $propertyLabel)
  */
 public function uploadExcavationFormAction()
 {
-    $formId = 3; // id of the excavation form
-    $cForm = $this->api()->read('collecting_forms', $formId)->getContent();
+    $formId = $this->params()->fromRoute('form-id');
+    $cForm = null;
+
+    // Try to find by ID first
+    if ($formId) {
+        try {
+            $response = $this->api()->read('collecting_forms', $formId);
+            if ($response) {
+                $cForm = $response->getContent();
+            }
+        } catch (\Exception $e) {
+            // ID not found, continue to label search
+        }
+    }
+    
+    // If not found, try to find by label
+    if (!$cForm) {
+        $response = $this->api()->search('collecting_forms', ['label' => 'Excavation Form'])->getContent();
+        if (!empty($response)) {
+            $cForm = $response[0];
+        }
+    }
+    
+    // If still not found, we have a problem
+    if (!$cForm) {
+        $this->messenger()->addError('Excavation Form not found. Please create a form named "Excavation Form" in the admin dashboard.');
+        return $this->redirect()->toRoute('site', ['site-slug' => 'megalod']);
+    }
+
     $form = $cForm->getForm();
 
     $existingArchaeologists = [];
@@ -203,6 +256,7 @@ public function uploadExcavationFormAction()
         'result' => $result,
         'itemSetId' => $itemSetId
     ]);
+    $view->setTemplate('collecting/site/index/upload-excavation-form');
     
     return $view;
 }

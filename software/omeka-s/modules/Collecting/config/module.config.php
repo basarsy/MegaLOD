@@ -132,6 +132,39 @@ return [
     ],
     'router' => [
         'routes' => [
+            'collecting-direct' => [
+                'type' => 'Segment',
+                'priority' => 100,
+                'options' => [
+                    'route' => '/collecting/:form-id/:action',
+                    'defaults' => [
+                        '__NAMESPACE__' => 'Collecting\Controller\Site',
+                        'controller' => 'Index',
+                        'site-slug' => 'megalod',
+                        '__SITE__' => true,
+                    ],
+                    'constraints' => [
+                        'form-id' => '\d+',
+                    ],
+                ],
+            ],
+            'collecting-item-direct' => [
+                'type' => 'Segment',
+                'priority' => 100,
+                'options' => [
+                    'route' => '/collecting/item/:item-id',
+                    'defaults' => [
+                        '__NAMESPACE__' => 'Collecting\Controller\Site',
+                        'controller' => 'Index',
+                        'action' => 'item-show',
+                        'site-slug' => 'megalod',
+                        '__SITE__' => true,
+                    ],
+                    'constraints' => [
+                        'item-id' => '\d+',
+                    ],
+                ],
+            ],
             'site' => [
                 'child_routes' => [
                     'collecting' => [
@@ -140,6 +173,7 @@ return [
                             'route' => '/collecting/:form-id/:action',
                             'defaults' => [
                                 '__NAMESPACE__' => 'Collecting\Controller\Site',
+                                'controller' => 'Index',
                             ],
                             'constraints' => [
                                 'form-id' => '\d+',
@@ -151,7 +185,7 @@ return [
                         'options' => [
                             'route' => '/collecting/item/:item-id',
                             'defaults' => [
-                                '__NAMESPACE__' => 'Collecting\Controller\Site',
+                                'controller' => 'Collecting\Controller\Site\Index',
                                 'action' => 'item-show',
                             ],
                             'constraints' => [
