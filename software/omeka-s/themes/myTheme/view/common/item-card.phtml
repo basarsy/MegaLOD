@@ -12,7 +12,7 @@ $item = $this->item;
   <?php endif; ?>
 
   <div class="item-metadata">
-    <h3><?= $item->displayTitle() ?></h3>
+    <h3><a href="<?= $item->url() ?>"><?= $item->displayTitle() ?></a></h3>
 
     <?php if ($material = $item->value('dbo:material')): ?>
       <p class="item-material"><strong>Material:</strong> <?= $material ?></p>

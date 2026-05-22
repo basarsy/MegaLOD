@@ -31,7 +31,9 @@ class IndexController extends AbstractActionController
 
         $view = new ViewModel;
         $view->setVariable('site', $site);
-        return $view;
+
+        // Redirect to add-triplestore if no other page is available
+        return $this->redirect()->toRoute('site/add-triplestore', ['site-slug' => $site->slug()]);
     }
 
     public function searchAction()
