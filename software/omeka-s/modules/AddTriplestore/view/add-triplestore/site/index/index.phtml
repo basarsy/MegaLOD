@@ -16,12 +16,11 @@ $isLoggedIn = isset($isLoggedIn) ? $isLoggedIn : false;
     <?php if (!$isLoggedIn): ?>
         <div class="login-required-section">
             <div class="alert alert-info">
-                <h3>🔒 Login Required</h3>
-                <p>You must be logged in to add excavations and artifacts. You can still search and view existing data.</p>
+                <h3>🔒 Restricted Access</h3>
+                <p>To contribute new archaeological findings, please log in to your account. You can still explore our existing database below.</p>
                 <div class="button-group">
                     <a href="<?php echo $this->url('site/add-triplestore/login', ['site-slug' => $this->currentSite()->slug()]); ?>" class="btn-primary">Login</a>
                     <a href="<?php echo $this->url('site/add-triplestore/signup', ['site-slug' => $this->currentSite()->slug()]); ?>" class="btn-secondary">Sign Up</a>
-                    <a href="<?php echo $this->url('site/add-triplestore/search', ['site-slug' => $this->currentSite()->slug()]); ?>" class="btn-secondary">Search Data</a>
                 </div>
             </div>
         </div>
@@ -29,8 +28,8 @@ $isLoggedIn = isset($isLoggedIn) ? $isLoggedIn : false;
         <div class="public-actions">
             <div class="action-card">
                 <div class="card-icon">🔍</div>
-                <h3>Search Data</h3>
-                <p>Find and explore existing archaeological data</p>
+                <h3>Explore the Database</h3>
+                <p>Find and explore existing excavations and artifacts from the European Neolithic period.</p>
                 <a href="<?php echo $this->url('site/add-triplestore/search', ['site-slug' => $this->currentSite()->slug()]); ?>" class="btn-primary">Search Now</a>
             </div>
         </div>

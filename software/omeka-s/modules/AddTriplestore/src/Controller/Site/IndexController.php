@@ -361,18 +361,9 @@ class IndexController extends AbstractActionController
     {
         // If already logged in, redirect to main page
         if ($this->identity()) {
-            $user = $this->identity();
-            
-            // Check if user is a guest/site-only user
-            if ($user->getRole() === 'guest') {
-                // return go to custom dashboard
-                return $this->redirect()->toRoute('site/add-triplestore/dashboard', [
-                    'site-slug' => $this->currentSite()->slug()
-                ]);
-            } else {
-                // return go to admin dashboard omeka s.
-                return $this->redirect()->toUrl('/admin');
-            }
+            return $this->redirect()->toRoute('site/add-triplestore', [
+                'site-slug' => $this->currentSite()->slug()
+            ]);
         }
 
         $form = $this->getServiceLocator()->get('FormElementManager')->get(\Omeka\Form\LoginForm::class);
@@ -404,16 +395,9 @@ class IndexController extends AbstractActionController
                 $result = $authService->authenticate();
                 
                 if ($result->isValid()) {
-                    
-                    $user = $authService->getIdentity();
-                    
-                    if ($user->getRole() === 'guest') {
-                        return $this->redirect()->toRoute('site/add-triplestore/dashboard', [
-                            'site-slug' => $this->currentSite()->slug()
-                        ]);
-                    } else {
-                        return $this->redirect()->toUrl('/admin');
-                    }
+                    return $this->redirect()->toRoute('site/add-triplestore', [
+                        'site-slug' => $this->currentSite()->slug()
+                    ]);
                 } else {
                     $this->messenger()->addError('Email or password is invalid');
                 }

@@ -22,23 +22,23 @@ $this->headTitle('Login - ' . $site->title());
             </div>
         <?php endif; ?>
 
-        <?php echo $this->form()->openTag($form); ?>
+        <?php echo $this->form()->openTag($form->setAttribute('class', 'auth-form')); ?>
 
         <div class="form-group">
             <label for="email">Email Address</label>
             <input type="email" name="email" id="email" class="form-control" required 
-                   placeholder="Enter your email" value="<?php echo $this->escapeHtml($form->get('email')->getValue()); ?>">
+                   placeholder="name@example.com" value="<?php echo $this->escapeHtml($form->get('email')->getValue()); ?>">
         </div>
 
         <div class="form-group">
             <label for="password">Password</label>
             <input type="password" name="password" id="password" class="form-control" required 
-                   placeholder="Enter your password">
+                   placeholder="••••••••">
         </div>
 
         <div class="form-actions">
             <?php echo $this->formHidden($form->get('loginform_csrf')); ?>
-            <button type="submit" class="btn-primary full-width">Login</button>
+            <button type="submit" class="btn-primary full-width">Sign In</button>
         </div>
 
         <?php echo $this->form()->closeTag(); ?>
@@ -55,119 +55,3 @@ $this->headTitle('Login - ' . $site->title());
         </div>
     </div>
 </div>
-
-<style>
-.auth-container {
-    min-height: 70vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-}
-
-.auth-card {
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-    padding: 40px;
-    width: 100%;
-    max-width: 400px;
-    border: 1px solid #e0e0e0;
-}
-
-.auth-header {
-    text-align: center;
-    margin-bottom: 30px;
-}
-
-.auth-header h2 {
-    color: #333;
-    margin-bottom: 10px;
-    font-size: 1.5rem;
-}
-
-.auth-header p {
-    color: #666;
-    margin: 0;
-}
-
-.form-group {
-    margin-bottom: 20px;
-}
-
-.form-group label {
-    display: block;
-    margin-bottom: 5px;
-    font-weight: 500;
-    color: #333;
-}
-
-.form-control {
-    width: 100%;
-    padding: 12px;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    font-size: 16px;
-    transition: border-color 0.2s ease;
-}
-
-.form-control:focus {
-    outline: none;
-    border-color: #4CAF50;
-    box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
-}
-
-.btn-primary {
-    background: #4CAF50;
-    color: white;
-    border: none;
-    padding: 12px 24px;
-    border-radius: 6px;
-    font-size: 16px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background 0.2s ease;
-}
-
-.btn-primary:hover {
-    background: #45a049;
-}
-
-.full-width {
-    width: 100%;
-}
-
-.auth-links {
-    text-align: center;
-    margin-top: 25px;
-    padding-top: 20px;
-    border-top: 1px solid #eee;
-}
-
-.auth-links p {
-    margin: 10px 0;
-    color: #666;
-}
-
-.auth-link {
-    color: #4CAF50;
-    text-decoration: none;
-    font-weight: 500;
-}
-
-.auth-link:hover {
-    text-decoration: underline;
-}
-
-.alert {
-    padding: 12px;
-    margin-bottom: 20px;
-    border-radius: 4px;
-}
-
-.alert-error {
-    background-color: #f8d7da;
-    color: #721c24;
-    border: 1px solid #f5c6cb;
-}
-</style>
